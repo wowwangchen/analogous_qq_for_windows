@@ -1,0 +1,28 @@
+<RCC>
+    <qresource prefix="/">
+        <file>picture/photo.png</file>
+        <file>picture/background.gif</file>
+        <file>picture/title.png</file>
+        <file>picture/ontheTop.png</file>
+        <file>picture/icon.jpg</file>
+        <file>picture/chat.png</file>
+        <file>picture/space.png</file>
+        <file>picture/friends.png</file>
+        <file>picture/file.png</file>
+        <file>picture/setting.png</file>
+        <file>picture/setting2.png</file>
+        <file>picture/chatblue.png</file>
+        <file>picture/friendsblue.png</file>
+        <file>picture/rightSide.jpg</file>
+        <file>picture/cut.png</file>
+        <file>picture/face.png</file>
+        <file>picture/selectFile.png</file>
+        <file>picture/selectPicture.png</file>
+        <file>picture/sendVoice.png</file>
+        <file>picture/cutblue.png</file>
+        <file>picture/faceblue.png</file>
+        <file>picture/selectFileblue.png</file>
+        <file>picture/selectPictureblue.png</file>
+        <file>picture/sendVoiceblue.png</file>
+    </qresource>
+</RCC>

@@ -46,6 +46,7 @@ public:
     void initPeople();                                       //从数据库中初始化系统中的所有人的信息
     QString getLocalIP();                                       //获取登录这个账号的主机ip+port
     void getAllIP();
+
 public slots:
     void setLogUp();
     void setChangePassword();
@@ -83,6 +84,5 @@ private:
 
     QString _IP;        //ip+port
     quint16 _port;
-    QTcpSocket socket;
 };
 #endif // REGISTER_H

@@ -14,7 +14,8 @@
 #include<QMultimedia>
 #include<QMediaPlayer>
 #include<QAudioOutput>
-
+#include<QTcpSocket>
+#include<QHostAddress>
 namespace Ui {
 class ChatMainWindow;
 }
@@ -42,6 +43,8 @@ public:
     void initFriends();              //初始化好友列表
     void keyPressEvent(QKeyEvent *event);
     void initMessageChatList();             //初始化聊天窗口
+    void connectToServer(QString accountName); //连接到服务端
+    void sendNameToServer();                   //客户端连接到服务端时，通过发送一个writeline发送自己的account名字
 signals:
     void exitWindow();      //退出
     void ctrlEnterPressed();//ctrl+enter=发送消息
@@ -59,14 +62,19 @@ private slots:
 
     void on_photoButton_clicked();
 
+    void onConnect();
+
 private:
     Ui::ChatMainWindow *ui;
 
 
     QVector<ListItem> _chatItems;               //聊天大纲显示
     QVector<ListMessageItem> _chatListItems;   //主聊天窗口
-    QMediaPlayer* musicPlayer;
-    bool isPlaying;
+    QMediaPlayer* musicPlayer;//音乐播放器，小插件
+    bool isPlaying;           //音乐是否在播放
+    QTcpSocket* _socket;      //当前这个客户端的套接字
+    QString accountName;      //登录的这个账号的名字
+    QString beAcceptedAccount;   //此时要发送消息的被接收者
 };
 
 #endif // CHATMAINWINDOW_H

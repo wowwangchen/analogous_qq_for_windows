@@ -8,6 +8,7 @@ Register::Register(QWidget *parent): QWidget(parent), ui(new Ui::Register)
     setAllStyleSheet();
     initDataBase();
     initPeople();
+
     connect(moreSlectionDialog,&moreSlection::logUp,this,&Register::setLogUp);
     connect(moreSlectionDialog,&moreSlection::changePassword,this,&Register::setChangePassword);
     connect(up,&registerUp::registerUpOver,this,&Register::AddnewAccount);
@@ -170,11 +171,8 @@ void Register::judgeCanLogin(QString account, QString password)
         {
             //LogInSuccess();
             this->hide();
-            _IP=getLocalIP();
-            QRandomGenerator randomGenerator;
-            _port=randomGenerator.bounded(3000,10001);
-            qDebug()<<_IP<<"  "<<_port;
-            getAllIP();
+
+            chatMainwindow->connectToServer(ui->accountLineEdit->text());
 
             chatMainwindow->show();
             connect(chatMainwindow,&ChatMainWindow::exitWindow,this,[=](){
@@ -280,6 +278,7 @@ void Register::getAllIP()
         qDebug() << "-----------------";
     }
 }
+
 
 void Register::setLogUp()
 {

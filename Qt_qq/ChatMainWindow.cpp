@@ -20,6 +20,9 @@ ChatMainWindow::ChatMainWindow(QWidget *parent) :
             qDebug() << "Music stopped";
         }
     });
+
+
+    connect(_socket,SIGNAL(connected()),this,SLOT(onConnect()));
 }
 
 ChatMainWindow::~ChatMainWindow()
@@ -41,6 +44,7 @@ ChatMainWindow::~ChatMainWindow()
 
     delete musicPlayer;
     delete ui;
+    delete _socket;
     emit exitWindow();
 }
 
@@ -103,6 +107,10 @@ void ChatMainWindow::setAllStyleSheet()
     musicPlayer->setVolume(50);
 
 
+    //socket
+    _socket=new QTcpSocket;
+
+
 }
 
 void ChatMainWindow::initChat()
@@ -144,6 +152,23 @@ void ChatMainWindow::keyPressEvent(QKeyEvent *event)
 void ChatMainWindow::initMessageChatList()
 {
 }
+
+void ChatMainWindow::connectToServer(QString accountName)
+{
+    //测试一下，所以用本地ip
+    _socket->connectToHost("127.0.0.1",50660);   //客户端连接到服务端的ip+port
+
+    sendNameToServer();
+}
+
+void ChatMainWindow::sendNameToServer()
+{
+    QByteArray str=accountName.toUtf8();
+    str.append('\n');
+    _socket->write(str);
+}
+
+
 
 //void ChatMainWindow::initFriends()
 //{
@@ -216,7 +241,7 @@ void ChatMainWindow::on_messageTextEdit_textChanged()
     }
     else
     {
-    ui->sendMessageButton->setStyleSheet("QPushButton {"
+        ui->sendMessageButton->setStyleSheet("QPushButton {"
                                              "font: 10pt \"Segoe Print\";"
                                              "background-color: rgb(0, 153, 255);"
                                              "color: rgb(255,255, 255);"
@@ -230,14 +255,44 @@ void ChatMainWindow::on_messageTextEdit_textChanged()
     }
 }
 
+void ChatMainWindow::on_chatListWidget1_itemClicked(QListWidgetItem *item)
+{
+    theFriendMessage* widget=static_cast<theFriendMessage*>(ui->chatListWidget1->itemWidget(item));
+    if(widget!=nullptr)
+    {
+        ui->nameLabel->setText(widget->getName());
+        beAcceptedAccount=widget->getName();
+    }
+}
+
+
+void ChatMainWindow::on_photoButton_clicked()
+{
+    qDebug()<<"1";
+    if(isPlaying==false)
+        musicPlayer->play();
+    else
+        musicPlayer->pause();
+    isPlaying=!isPlaying;
+}
+
+void ChatMainWindow::onConnect()
+{
+    qDebug()<<"**Peer Address:"+_socket->peerAddress().toString()+"**";
+    qDebug()<<"**Peer Port:"+QString::number(_socket->peerPort())+"**";
+}
+
+
 
 void ChatMainWindow::on_sendMessageButton_clicked()
 {
+    //获取message
     QString message=ui->messageTextEdit->toPlainText();
     ui->messageTextEdit->clear();
 
+    //设置item-widget
     QListWidgetItem* chatItem=new QListWidgetItem(ui->chatMessageListWidget);
-    chatItem->setSizeHint(QSize(ui->chatMessageListWidget->width(),100));
+    chatItem->setSizeHint(QSize(ui->chatMessageListWidget->width(),90));
     chatItem->setFlags(chatItem->flags() & ~Qt::ItemIsSelectable);
     ui->chatMessageListWidget->addItem(chatItem);
 
@@ -256,29 +311,12 @@ void ChatMainWindow::on_sendMessageButton_clicked()
     ui->chatMessageListWidget->scrollToBottom();
     ui->messageTextEdit->setFocus();
 
-}
+    QByteArray str=message.toUtf8();
+    QByteArray name=beAcceptedAccount.toUtf8();
+    str=name+"###"+str;
+    str.append('\n');
+    _socket->write(str);
 
-
-
-
-
-void ChatMainWindow::on_chatListWidget1_itemClicked(QListWidgetItem *item)
-{
-    theFriendMessage* widget=static_cast<theFriendMessage*>(ui->chatListWidget1->itemWidget(item));
-    if(widget!=nullptr)
-    {
-        ui->nameLabel->setText(widget->getName());
-    }
-}
-
-
-void ChatMainWindow::on_photoButton_clicked()
-{
-    qDebug()<<"1";
-    if(isPlaying==false)
-        musicPlayer->play();
-    else
-        musicPlayer->pause();
-    isPlaying=!isPlaying;
+    qDebug() << "Message sent to server: " << message;
 }
 

@@ -8,14 +8,38 @@ ChatMainWindow::ChatMainWindow(QWidget *parent) :
     ui->setupUi(this);
     setAllStyleSheet();
     initChat();
-    initChatList();
+    initMessageChatList();
     //initFriends();
 
-
+    QObject::connect(musicPlayer, &QMediaPlayer::stateChanged, [&](QMediaPlayer::State state) {
+        if (state == QMediaPlayer::PlayingState) {
+            // 音乐正在播放
+            qDebug() << "Music is playing";
+        } else if (state == QMediaPlayer::StoppedState) {
+            // 音乐已停止播放
+            qDebug() << "Music stopped";
+        }
+    });
 }
 
 ChatMainWindow::~ChatMainWindow()
 {
+    //释放内存
+    for (ListItem& listItem : _chatItems)
+    {
+        delete listItem.item;
+        delete listItem.widget;
+    }
+    _chatItems.clear();
+
+    for (ListMessageItem& listItem : _chatListItems)
+    {
+        delete listItem.item;
+        delete listItem.widget;
+    }
+    _chatListItems.clear();
+
+    delete musicPlayer;
     delete ui;
     emit exitWindow();
 }
@@ -28,7 +52,7 @@ void ChatMainWindow::setAllStyleSheet()
     setWindowTitle(" ");
 
     //搜索栏
-    ui->searchLineEdit->setPlaceholderText("🔍搜索                ");
+    ui->searchLineEdit->setPlaceholderText("🔍搜索");
     ui->searchLineEdit->setAlignment(Qt::AlignLeft);   //左侧
 
     //左侧导航栏
@@ -71,23 +95,42 @@ void ChatMainWindow::setAllStyleSheet()
     //QPixmap rightSidePixmap(":/picture/rightSide.jpg");
     //ui->rightSideLabel->setPixmap(rightSidePixmap);
     //ui->rightSideLabel->setScaledContents(true);
+
+    //播放音乐
+    musicPlayer=new QMediaPlayer(this);
+    musicPlayer->setMedia(QUrl("qrc:/music/seeYouAgain.mp3"));
+    isPlaying=false;
+    musicPlayer->setVolume(50);
+
+
 }
 
 void ChatMainWindow::initChat()
 {
-    QListWidgetItem* item=new QListWidgetItem(ui->chatListWidget);
+
+    QListWidgetItem* item=new QListWidgetItem(ui->chatListWidget1);
     item->setSizeHint(QSize(ui->friendsTreeWidget->width(),90));
-    ui->chatListWidget->addItem(item);
+    ui->chatListWidget1->addItem(item);
     theFriendMessage*item1=new theFriendMessage;
     item1->setName("zhangbo");
-    ui->chatListWidget->setItemWidget(item,item1);
+    ui->chatListWidget1->setItemWidget(item,item1);
+    ListItem temp;
+    temp.item=item;
+    temp.widget=item1;
+    _chatItems.push_back(temp);
 
-    QListWidgetItem* item2=new QListWidgetItem(ui->chatListWidget);
+
+
+    QListWidgetItem* item2=new QListWidgetItem(ui->chatListWidget1);
     item2->setSizeHint(QSize(240,90));
-    ui->chatListWidget->addItem(item2);
+    ui->chatListWidget1->addItem(item2);
     theFriendMessage*item3=new theFriendMessage;
     item3->setName("zhouyang");
-    ui->chatListWidget->setItemWidget(item2,item3);
+    ui->chatListWidget1->setItemWidget(item2,item3);
+    ListItem temp2;
+    temp2.item=item2;
+    temp2.widget=item3;
+    _chatItems.push_back(temp2);
 }
 
 void ChatMainWindow::keyPressEvent(QKeyEvent *event)
@@ -98,33 +141,8 @@ void ChatMainWindow::keyPressEvent(QKeyEvent *event)
     }
 }
 
-void ChatMainWindow::initChatList()
+void ChatMainWindow::initMessageChatList()
 {
-    QListWidgetItem* item=new QListWidgetItem(ui->chatMessageListWidget);
-    item->setSizeHint(QSize(ui->chatMessageListWidget->width(),100));
-    item->setFlags(item->flags() & ~Qt::ItemIsSelectable); //不可点击
-    item->setTextAlignment(Qt::AlignRight | Qt::AlignVCenter);
-    ui->chatMessageListWidget->addItem(item);
-    theFriendMessage*item1=new theFriendMessage;
-    item1->setName("zhangbo");
-    ui->chatMessageListWidget->setItemWidget(item,item1);
-
-    QListWidgetItem* item2=new QListWidgetItem(ui->chatMessageListWidget);
-    item2->setSizeHint(QSize(ui->chatMessageListWidget->width(),100));
-    item2->setFlags(item2->flags() & ~Qt::ItemIsSelectable);
-    ui->chatMessageListWidget->addItem(item2);
-    theFriendMessage*item3=new theFriendMessage;
-    item3->setName("zhouyang");
-    ui->chatMessageListWidget->setItemWidget(item2,item3);
-
-    QListWidgetItem* item4=new QListWidgetItem(ui->chatMessageListWidget);
-    item4->setSizeHint(QSize(ui->chatMessageListWidget->width(),100));
-    item4->setFlags(item4->flags() & ~Qt::ItemIsSelectable);
-    ui->chatMessageListWidget->addItem(item4);
-    theFriendMessage*item5=new theFriendMessage;
-    item5->setName("zhouyang");
-    ui->chatMessageListWidget->setItemWidget(item4,item5);
-
 }
 
 //void ChatMainWindow::initFriends()
@@ -201,7 +219,7 @@ void ChatMainWindow::on_messageTextEdit_textChanged()
     ui->sendMessageButton->setStyleSheet("QPushButton {"
                                              "font: 10pt \"Segoe Print\";"
                                              "background-color: rgb(0, 153, 255);"
-                                             "color: rgb(228, 244, 255);"
+                                             "color: rgb(255,255, 255);"
                                              "border-radius: 10px;"
                                              "padding: 10px;"
                                              "}"
@@ -218,18 +236,49 @@ void ChatMainWindow::on_sendMessageButton_clicked()
     QString message=ui->messageTextEdit->toPlainText();
     ui->messageTextEdit->clear();
 
-    QListWidgetItem* item4=new QListWidgetItem(ui->chatMessageListWidget);
-    item4->setSizeHint(QSize(ui->chatMessageListWidget->width(),100));
-    item4->setFlags(item4->flags() & ~Qt::ItemIsSelectable);
-    ui->chatMessageListWidget->addItem(item4);
-    theFriendMessage*item5=new theFriendMessage;
-    item5->setName(message);
-    ui->chatMessageListWidget->setItemWidget(item4,item5);
+    QListWidgetItem* chatItem=new QListWidgetItem(ui->chatMessageListWidget);
+    chatItem->setSizeHint(QSize(ui->chatMessageListWidget->width(),100));
+    chatItem->setFlags(chatItem->flags() & ~Qt::ItemIsSelectable);
+    ui->chatMessageListWidget->addItem(chatItem);
 
+    ChatLeftWidget*chatWidget=new ChatLeftWidget;
+    chatWidget->setMessage(message);
+    chatWidget->setSize(message.size());
+    ui->chatMessageListWidget->setItemWidget(chatItem,chatWidget);
+
+    //添加到vector，方便最后释放内存
+    ListMessageItem temp;
+    temp.item=chatItem;
+    temp.widget=chatWidget;
+    _chatListItems.push_back(temp);
+
+    //设置焦点最新状态
     ui->chatMessageListWidget->scrollToBottom();
     ui->messageTextEdit->setFocus();
 
-    //QScrollBar *scrollBar = ui->scrollArea->verticalScrollBar();
-    //scrollBar->setValue(scrollBar->minimum());
+}
+
+
+
+
+
+void ChatMainWindow::on_chatListWidget1_itemClicked(QListWidgetItem *item)
+{
+    theFriendMessage* widget=static_cast<theFriendMessage*>(ui->chatListWidget1->itemWidget(item));
+    if(widget!=nullptr)
+    {
+        ui->nameLabel->setText(widget->getName());
+    }
+}
+
+
+void ChatMainWindow::on_photoButton_clicked()
+{
+    qDebug()<<"1";
+    if(isPlaying==false)
+        musicPlayer->play();
+    else
+        musicPlayer->pause();
+    isPlaying=!isPlaying;
 }
 

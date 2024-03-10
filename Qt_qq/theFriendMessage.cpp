@@ -17,3 +17,8 @@ void theFriendMessage::setName(QString name)
 {
     ui->nameLabel->setText(name);
 }
+
+QString theFriendMessage::getName()
+{
+    return ui->nameLabel->text();
+}

@@ -24,5 +24,6 @@
         <file>picture/selectFileblue.png</file>
         <file>picture/selectPictureblue.png</file>
         <file>picture/sendVoiceblue.png</file>
+        <file>music/seeYouAgain.mp3</file>
     </qresource>
 </RCC>

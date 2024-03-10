@@ -589,22 +589,39 @@ background-color: rgb(242, 242, 242);</string>
        <item>
         <widget class="QStackedWidget" name="stackedWidget">
          <property name="currentIndex">
-          <number>1</number>
+          <number>0</number>
          </property>
          <widget class="QWidget" name="page_3">
-          <widget class="QListWidget" name="chatListWidget">
-           <property name="geometry">
-            <rect>
-             <x>0</x>
-             <y>0</y>
-             <width>401</width>
-             <height>823</height>
-            </rect>
+          <layout class="QHBoxLayout" name="horizontalLayout_15">
+           <property name="spacing">
+            <number>0</number>
            </property>
-           <property name="styleSheet">
-            <string notr="true">border: 1px solid white;</string>
+           <property name="leftMargin">
+            <number>0</number>
            </property>
-          </widget>
+           <property name="topMargin">
+            <number>0</number>
+           </property>
+           <property name="rightMargin">
+            <number>0</number>
+           </property>
+           <property name="bottomMargin">
+            <number>0</number>
+           </property>
+           <item>
+            <widget class="QListWidget" name="chatListWidget1">
+             <property name="minimumSize">
+              <size>
+               <width>0</width>
+               <height>810</height>
+              </size>
+             </property>
+             <property name="styleSheet">
+              <string notr="true">border: 1px solid white;</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
          </widget>
          <widget class="QWidget" name="page_4">
           <widget class="QTreeWidget" name="friendsTreeWidget">
@@ -801,7 +818,7 @@ background-color: rgb(242, 242, 242);</string>
             </size>
            </property>
            <property name="styleSheet">
-            <string notr="true">background-color: qlineargradient(spread:pad, x1:0.0666667, y1:0.142, x2:0.772, y2:0.954545, stop:0 rgba(239, 255, 249, 255), stop:1 rgba(255, 255, 255, 255));</string>
+            <string notr="true"/>
            </property>
            <property name="frameShape">
             <enum>QFrame::StyledPanel</enum>
@@ -822,7 +839,7 @@ background-color: rgb(242, 242, 242);</string>
              <string notr="true">font: 13pt &quot;Segoe Print&quot;;</string>
             </property>
             <property name="text">
-             <string>名字</string>
+             <string/>
             </property>
            </widget>
           </widget>

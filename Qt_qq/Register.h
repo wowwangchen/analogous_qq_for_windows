@@ -17,6 +17,11 @@
 #include"ChatMainWindow.h"
 #include"registerUp.h"
 #include"People.h"
+#include<QHostInfo>
+#include<QRandomGenerator>
+#include<QtNetwork>
+#include<QTcpSocket>
+#include<QNetworkInterface>
 QT_BEGIN_NAMESPACE
 namespace Ui { class Register; }
 QT_END_NAMESPACE
@@ -39,6 +44,8 @@ public:
     void LogInSuccess();                                     //登录成功
     void LogInFail();                                        //登录失败
     void initPeople();                                       //从数据库中初始化系统中的所有人的信息
+    QString getLocalIP();                                       //获取登录这个账号的主机ip+port
+    void getAllIP();
 public slots:
     void setLogUp();
     void setChangePassword();
@@ -72,6 +79,10 @@ private:
 
     QSqlDatabase qq_account;            //数据库
     ChatMainWindow *chatMainwindow;     //登录成功后的主窗口
-    QVector<People> _people;
+    QVector<People> _people;            //所有人的信息
+
+    QString _IP;        //ip+port
+    quint16 _port;
+    QTcpSocket socket;
 };
 #endif // REGISTER_H

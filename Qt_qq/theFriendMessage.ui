@@ -28,7 +28,7 @@ background-color:transparent;
 font: 10pt &quot;Segoe Print&quot;;</string>
    </property>
    <property name="text">
-    <string>测试</string>
+    <string>速递</string>
    </property>
   </widget>
   <widget class="QLabel" name="messageLabel">
@@ -46,7 +46,7 @@ background-color:transparent;
 font: 10pt &quot;Segoe Print&quot;;</string>
    </property>
    <property name="text">
-    <string>测试</string>
+    <string>你是</string>
    </property>
   </widget>
   <widget class="QLabel" name="photoLabel">
@@ -60,10 +60,11 @@ font: 10pt &quot;Segoe Print&quot;;</string>
    </property>
    <property name="styleSheet">
     <string notr="true">border: none;
+image: url(:/picture/photo.png);
 background-color:transparent;</string>
    </property>
    <property name="text">
-    <string>头像</string>
+    <string/>
    </property>
   </widget>
  </widget>

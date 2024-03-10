@@ -15,6 +15,7 @@ public:
     explicit theFriendMessage(QWidget *parent = nullptr);
     ~theFriendMessage();
     void setName(QString);
+    QString getName();
 
 private:
     Ui::theFriendMessage *ui;

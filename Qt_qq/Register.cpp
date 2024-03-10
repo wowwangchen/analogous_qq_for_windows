@@ -170,6 +170,12 @@ void Register::judgeCanLogin(QString account, QString password)
         {
             //LogInSuccess();
             this->hide();
+            _IP=getLocalIP();
+            QRandomGenerator randomGenerator;
+            _port=randomGenerator.bounded(3000,10001);
+            qDebug()<<_IP<<"  "<<_port;
+            getAllIP();
+
             chatMainwindow->show();
             connect(chatMainwindow,&ChatMainWindow::exitWindow,this,[=](){
                 //析构
@@ -228,6 +234,50 @@ void Register::initPeople()
     } else {
         // 处理数据库连接错误
         qDebug() << "Failed to connect to MySQL database";
+    }
+}
+
+QString Register::getLocalIP()
+{
+    QString IP="";
+
+    QString localname=QHostInfo::localHostName();
+    QHostInfo hostinfo=QHostInfo::fromName(localname);
+    QList<QHostAddress> list=hostinfo.addresses();
+    if(!list.isEmpty())
+    {
+        for(int i=0;i<list.count();i++)
+        {
+            if(list.at(i).protocol()==QAbstractSocket::IPv4Protocol)
+            {
+                IP=list.at(i).toString();
+                break;
+            }
+        }
+    }
+    return IP;
+}
+
+void Register::getAllIP()
+{
+    QList<QNetworkInterface> interfaces = QNetworkInterface::allInterfaces();
+
+    // 遍历每个网络接口
+    for (const QNetworkInterface& interface : interfaces)
+    {
+        qDebug() << "设备名称:" << interface.humanReadableName();
+                                         qDebug() << "硬件地址:" << interface.hardwareAddress();
+
+        // 遍历每个接口的IP地址
+        QList<QNetworkAddressEntry> addressEntries = interface.addressEntries();
+        for (const QNetworkAddressEntry& entry : addressEntries)
+        {
+            qDebug() << "IP地址:" << entry.ip().toString();
+            qDebug() << "子网掩码:" << entry.netmask().toString();
+            qDebug() << "广播地址:" << entry.broadcast().toString();
+        }
+
+        qDebug() << "-----------------";
     }
 }
 

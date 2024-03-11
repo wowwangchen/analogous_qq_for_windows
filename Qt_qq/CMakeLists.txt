@@ -62,6 +62,7 @@ else()
             registerUp.h registerUp.cpp registerUp.ui
             People.h People.cpp
             ChatLeftWidget.h ChatLeftWidget.cpp ChatLeftWidget.ui
+            ChatRightWidget.h ChatRightWidget.cpp ChatRightWidget.ui
         )
     endif()
 endif()

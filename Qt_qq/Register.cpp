@@ -173,6 +173,7 @@ void Register::judgeCanLogin(QString account, QString password)
             this->hide();
 
             chatMainwindow->connectToServer(ui->accountLineEdit->text());
+            qDebug()<<ui->accountLineEdit->text()+"ui->accountLineEdit->text()";
 
             chatMainwindow->show();
             connect(chatMainwindow,&ChatMainWindow::exitWindow,this,[=](){

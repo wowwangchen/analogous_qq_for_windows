@@ -22,6 +22,8 @@ ChatMainWindow::ChatMainWindow(QWidget *parent) :
     });
 
 
+
+
     connect(_socket,SIGNAL(connected()),this,SLOT(onConnect()));
 }
 
@@ -35,12 +37,19 @@ ChatMainWindow::~ChatMainWindow()
     }
     _chatItems.clear();
 
-    for (ListMessageItem& listItem : _chatListItems)
+    //聊天气泡
+    for (ListMessageItem1& listItem : _chatListItems1)
     {
         delete listItem.item;
         delete listItem.widget;
     }
-    _chatListItems.clear();
+    _chatListItems1.clear();
+    for (ListMessageItem2& listItem : _chatListItems2)
+    {
+        delete listItem.item;
+        delete listItem.widget;
+    }
+    _chatListItems2.clear();
 
     delete musicPlayer;
     delete ui;
@@ -109,6 +118,7 @@ void ChatMainWindow::setAllStyleSheet()
 
     //socket
     _socket=new QTcpSocket;
+    connect(_socket,SIGNAL(readyRead()),this,SLOT(onSocketReadyRead()));
 
 
 }
@@ -120,7 +130,7 @@ void ChatMainWindow::initChat()
     item->setSizeHint(QSize(ui->friendsTreeWidget->width(),90));
     ui->chatListWidget1->addItem(item);
     theFriendMessage*item1=new theFriendMessage;
-    item1->setName("zhangbo");
+    item1->setName("zhoumi");
     ui->chatListWidget1->setItemWidget(item,item1);
     ListItem temp;
     temp.item=item;
@@ -133,7 +143,7 @@ void ChatMainWindow::initChat()
     item2->setSizeHint(QSize(240,90));
     ui->chatListWidget1->addItem(item2);
     theFriendMessage*item3=new theFriendMessage;
-    item3->setName("zhouyang");
+    item3->setName("1");
     ui->chatListWidget1->setItemWidget(item2,item3);
     ListItem temp2;
     temp2.item=item2;
@@ -158,14 +168,15 @@ void ChatMainWindow::connectToServer(QString accountName)
     //测试一下，所以用本地ip
     _socket->connectToHost("127.0.0.1",50660);   //客户端连接到服务端的ip+port
 
-    sendNameToServer();
+    sendNameToServer(accountName);
 }
 
-void ChatMainWindow::sendNameToServer()
+void ChatMainWindow::sendNameToServer(QString accountName)
 {
     QByteArray str=accountName.toUtf8();
     str.append('\n');
     _socket->write(str);
+
 }
 
 
@@ -282,6 +293,34 @@ void ChatMainWindow::onConnect()
     qDebug()<<"**Peer Port:"+QString::number(_socket->peerPort())+"**";
 }
 
+void ChatMainWindow::onSocketReadyRead()
+{
+    QString message=_socket->readLine();
+
+    while(_socket->canReadLine())
+    {
+        message+=_socket->readLine();
+    }
+    if (message.endsWith('\n'))
+        message = message.chopped(1); // 移除末尾的一个字符（换行符）
+
+    QListWidgetItem* chatItem=new QListWidgetItem(ui->chatMessageListWidget);
+    chatItem->setSizeHint(QSize(ui->chatMessageListWidget->width(),90));
+    chatItem->setFlags(chatItem->flags() & ~Qt::ItemIsSelectable);
+    ui->chatMessageListWidget->addItem(chatItem);
+
+    ChatRightWidget*chatWidget=new ChatRightWidget;
+    chatWidget->setMessage(message);
+    chatWidget->setSize(message.size());
+    ui->chatMessageListWidget->setItemWidget(chatItem,chatWidget);
+
+    //添加到vector，方便最后释放内存
+    ListMessageItem2 temp;
+    temp.item=chatItem;
+    temp.widget=chatWidget;
+    _chatListItems2.push_back(temp);
+}
+
 
 
 void ChatMainWindow::on_sendMessageButton_clicked()
@@ -302,10 +341,10 @@ void ChatMainWindow::on_sendMessageButton_clicked()
     ui->chatMessageListWidget->setItemWidget(chatItem,chatWidget);
 
     //添加到vector，方便最后释放内存
-    ListMessageItem temp;
+    ListMessageItem1 temp;
     temp.item=chatItem;
     temp.widget=chatWidget;
-    _chatListItems.push_back(temp);
+    _chatListItems1.push_back(temp);
 
     //设置焦点最新状态
     ui->chatMessageListWidget->scrollToBottom();

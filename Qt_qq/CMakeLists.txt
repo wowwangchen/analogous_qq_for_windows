@@ -63,6 +63,9 @@ else()
             People.h People.cpp
             ChatLeftWidget.h ChatLeftWidget.cpp ChatLeftWidget.ui
             ChatRightWidget.h ChatRightWidget.cpp ChatRightWidget.ui
+            ListItemDelegate.h ListItemDelegate.cpp
+            ListItemModel.h ListItemModel.cpp
+
         )
     endif()
 endif()

@@ -1,6 +1,5 @@
 #include "ChatMainWindow.h"
 #include "ui_ChatMainWindow.h"
-
 ChatMainWindow::ChatMainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::ChatMainWindow)
@@ -9,7 +8,6 @@ ChatMainWindow::ChatMainWindow(QWidget *parent) :
     setAllStyleSheet();
     initChat();
     initMessageChatList();
-    //initFriends();
 
     QObject::connect(musicPlayer, &QMediaPlayer::stateChanged, [&](QMediaPlayer::State state) {
         if (state == QMediaPlayer::PlayingState) {
@@ -21,11 +19,10 @@ ChatMainWindow::ChatMainWindow(QWidget *parent) :
         }
     });
 
-
-
-
     connect(_socket,SIGNAL(connected()),this,SLOT(onConnect()));
 }
+
+
 
 ChatMainWindow::~ChatMainWindow()
 {
@@ -37,23 +34,25 @@ ChatMainWindow::~ChatMainWindow()
     }
     _chatItems.clear();
 
-    //聊天气泡
-    for (ListMessageItem1& listItem : _chatListItems1)
-    {
-        delete listItem.item;
-        delete listItem.widget;
-    }
-    _chatListItems1.clear();
-    for (ListMessageItem2& listItem : _chatListItems2)
-    {
-        delete listItem.item;
-        delete listItem.widget;
-    }
-    _chatListItems2.clear();
+//    for (QTreeWidgetItem* item : friendsItems)
+//    {
+//        delete item; // 释放内存
+//        item = nullptr; // 将指针设置为nullptr
+//    }
+    friendsItems.clear();
 
     delete musicPlayer;
     delete ui;
     delete _socket;
+    delete MessageDelegate;
+
+    for (QStringListModel* model : Messagemodel)
+    {
+        delete model;
+    }
+    Messagemodel.clear();
+
+    delete mySelf;
     emit exitWindow();
 }
 
@@ -121,6 +120,15 @@ void ChatMainWindow::setAllStyleSheet()
     connect(_socket,SIGNAL(readyRead()),this,SLOT(onSocketReadyRead()));
 
 
+    //view的model与delegate
+
+    MessageDelegate=new ListItemDelegate(ui->chatMessageListView);
+    ui->chatMessageListView->setItemDelegate(MessageDelegate);
+
+
+    this->mySelf=new People("-1");
+
+
 }
 
 void ChatMainWindow::initChat()
@@ -179,25 +187,54 @@ void ChatMainWindow::sendNameToServer(QString accountName)
 
 }
 
+void ChatMainWindow::initMyself(QString account,QVector<QString> friends)
+{
+    this->mySelf->account=account;
+    this->mySelf->friends=friends;
+    ui->mynameLabel->setText(account);
+    initFriends();
+}
+
+void ChatMainWindow::ScreenShot()
+{
+    QPixmap *pixmap=new QPixmap;
+    *pixmap=QGuiApplication::primaryScreen()->grabWindow(0);
+
+    QClipboard *clipboard = QGuiApplication::clipboard();
+    clipboard->setPixmap(*pixmap);
+
+    *pixmap=pixmap->scaled(ui->messageTextEdit->width()/4,ui->messageTextEdit->height()/2);
+    QTextCursor cursor = ui->messageTextEdit->textCursor();
+    QTextDocument *document = ui->messageTextEdit->document();
+    // 在光标位置插入图像
+    document->addResource(QTextDocument::ImageResource, QUrl("screenshot"), *pixmap);
+    cursor.insertImage("screenshot");
+
+    this->show();
+    //delete pixmap;
+
+}
 
 
-//void ChatMainWindow::initFriends()
-//{
-//    QTreeWidgetItem *group1=new QTreeWidgetItem(ui->friendsTreeWidget);
-//    group1->setText(0, "分组1");
-//    QTreeWidgetItem *friend1 = new QTreeWidgetItem(group1);
-//    friend1->setText(0, "好友1");
 
-//    QTreeWidgetItem *group2=new QTreeWidgetItem(ui->friendsTreeWidget);
-//    group2->setText(0, "分组2");
-//    QTreeWidgetItem *friend2 = new QTreeWidgetItem(group2);
-//    friend2->setText(0, "好友3");
-//    QTreeWidgetItem *friend3 = new QTreeWidgetItem(group2);
-//    friend3->setText(0, "好友4");
+void ChatMainWindow::initFriends()
+{
+    QTreeWidgetItem* firstItem =new QTreeWidgetItem(ui->friendsTreeWidget); // 获取第一个顶级项目
+    friendsItems.push_back(firstItem);
+    firstItem->setText(0,"朋友");
+    ui->friendsTreeWidget->addTopLevelItem(firstItem);
 
-//    ui->friendsTreeWidget->addTopLevelItem(group1);
-//    ui->friendsTreeWidget->addTopLevelItem(group2);
-//}
+    qDebug()<<mySelf->friends.size();
+    for (int i=0;i<mySelf->friends.size();i++)
+    {
+        QString friendName=mySelf->friends[i];
+        QTreeWidgetItem* item = new QTreeWidgetItem(firstItem);
+        item->setText(0, friendName); // 在第一列中设置文本
+        friendsItems.push_back(item);
+        // 可以设置更多属性和列的文本
+        firstItem->addChild(item);
+    }
+}
 
 
 
@@ -272,8 +309,16 @@ void ChatMainWindow::on_chatListWidget1_itemClicked(QListWidgetItem *item)
     if(widget!=nullptr)
     {
         ui->nameLabel->setText(widget->getName());
-        beAcceptedAccount=widget->getName();
     }
+
+    QStringListModel* _model=Messagemodel[ui->nameLabel->text()];
+    if(_model==nullptr)
+    {
+        QStringListModel* model=new QStringListModel;
+        Messagemodel[ui->nameLabel->text()]=model;
+        _model=model;
+    }
+    ui->chatMessageListView->setModel(_model);
 }
 
 
@@ -295,67 +340,108 @@ void ChatMainWindow::onConnect()
 
 void ChatMainWindow::onSocketReadyRead()
 {
+    QString sender="";
     QString message=_socket->readLine();
 
+    //取出发消息的人的account和消息
     while(_socket->canReadLine())
     {
         message+=_socket->readLine();
     }
-    if (message.endsWith('\n'))
+    while (!message.isEmpty() && message.endsWith('\n'))
         message = message.chopped(1); // 移除末尾的一个字符（换行符）
 
-    QListWidgetItem* chatItem=new QListWidgetItem(ui->chatMessageListWidget);
-    chatItem->setSizeHint(QSize(ui->chatMessageListWidget->width(),90));
-    chatItem->setFlags(chatItem->flags() & ~Qt::ItemIsSelectable);
-    ui->chatMessageListWidget->addItem(chatItem);
+    QStringList parts = message.split("###");
+    if(parts.size()==2)
+    {
+        sender=parts[0];
+        message=parts[1];
+    }
 
-    ChatRightWidget*chatWidget=new ChatRightWidget;
-    chatWidget->setMessage(message);
-    chatWidget->setSize(message.size());
-    ui->chatMessageListWidget->setItemWidget(chatItem,chatWidget);
 
-    //添加到vector，方便最后释放内存
-    ListMessageItem2 temp;
-    temp.item=chatItem;
-    temp.widget=chatWidget;
-    _chatListItems2.push_back(temp);
+    //让delegate识别，左对齐
+    message="a1`"+message;
+
+
+
+    //通过名字来map出对应的model显示它们的聊天记录
+    QStringListModel* _model=Messagemodel[sender];
+    if(_model==nullptr)
+    {
+        QStringListModel* model=new QStringListModel;
+        Messagemodel[sender]=model;
+        _model=model;
+    }
+    //ui->chatMessageListView->setModel(_model);
+    QStringList itemlist = _model->stringList();
+    itemlist.append(message);
+    _model->setStringList(itemlist);
+
+
+    ui->chatMessageListView->update();
+
+
 }
 
 
 
 void ChatMainWindow::on_sendMessageButton_clicked()
 {
-    //获取message
-    QString message=ui->messageTextEdit->toPlainText();
+    QString message = ui->messageTextEdit->toPlainText();
     ui->messageTextEdit->clear();
 
-    //设置item-widget
-    QListWidgetItem* chatItem=new QListWidgetItem(ui->chatMessageListWidget);
-    chatItem->setSizeHint(QSize(ui->chatMessageListWidget->width(),90));
-    chatItem->setFlags(chatItem->flags() & ~Qt::ItemIsSelectable);
-    ui->chatMessageListWidget->addItem(chatItem);
+    // 添加并更新model指向的stringlist
+    //每个人对应着一个model
+    QStringListModel* _model=Messagemodel[ui->nameLabel->text()];
+    if(_model==nullptr)
+    {
+        QStringListModel* model=new QStringListModel;
+        Messagemodel[ui->nameLabel->text()]=model;
+        _model=model;
+    }
+    ui->chatMessageListView->setModel(_model);
+    QStringList itemlist = _model->stringList();
+    itemlist.append(message);
+    _model->setStringList(itemlist);
 
-    ChatLeftWidget*chatWidget=new ChatLeftWidget;
-    chatWidget->setMessage(message);
-    chatWidget->setSize(message.size());
-    ui->chatMessageListWidget->setItemWidget(chatItem,chatWidget);
 
-    //添加到vector，方便最后释放内存
-    ListMessageItem1 temp;
-    temp.item=chatItem;
-    temp.widget=chatWidget;
-    _chatListItems1.push_back(temp);
+    ui->chatMessageListView->update();
+
 
     //设置焦点最新状态
-    ui->chatMessageListWidget->scrollToBottom();
+    ui->chatMessageListView->scrollToBottom();
     ui->messageTextEdit->setFocus();
 
     QByteArray str=message.toUtf8();
-    QByteArray name=beAcceptedAccount.toUtf8();
+    QByteArray name=ui->nameLabel->text().toUtf8();
     str=name+"###"+str;
     str.append('\n');
     _socket->write(str);
 
-    qDebug() << "Message sent to server: " << message;
+    //qDebug() << "Message sent to server: " << message;
+}
+
+
+void ChatMainWindow::on_cutButton_clicked()
+{
+    this->hide();
+    QTimer::singleShot(1000, this, SLOT(ScreenShot()));
+}
+
+
+void ChatMainWindow::on_friendsTreeWidget_currentItemChanged(QTreeWidgetItem *current, QTreeWidgetItem *previous)
+{
+    if(current &&!current->parent())
+        return;
+    ui->nameLabel->setText(current->text(0));
+
+    QStringListModel* _model=Messagemodel[ui->nameLabel->text()];
+    if(_model==nullptr)
+    {
+        QStringListModel* model=new QStringListModel;
+        Messagemodel[ui->nameLabel->text()]=model;
+        _model=model;
+    }
+    ui->chatMessageListView->setModel(_model);
 }
 

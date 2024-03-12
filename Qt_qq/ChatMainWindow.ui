@@ -43,6 +43,13 @@
       </property>
       <layout class="QVBoxLayout" name="verticalLayout_2">
        <item>
+        <widget class="QLabel" name="mynameLabel">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item>
         <spacer name="verticalSpacer_3">
          <property name="orientation">
           <enum>Qt::Vertical</enum>
@@ -589,7 +596,7 @@ background-color: rgb(242, 242, 242);</string>
        <item>
         <widget class="QStackedWidget" name="stackedWidget">
          <property name="currentIndex">
-          <number>0</number>
+          <number>1</number>
          </property>
          <widget class="QWidget" name="page_3">
           <layout class="QHBoxLayout" name="horizontalLayout_15">
@@ -649,31 +656,6 @@ border: none;
              <string/>
             </property>
            </column>
-           <item>
-            <property name="text">
-             <string>新建项目</string>
-            </property>
-            <item>
-             <property name="text">
-              <string>新建子项目</string>
-             </property>
-            </item>
-           </item>
-           <item>
-            <property name="text">
-             <string>新建项目</string>
-            </property>
-            <item>
-             <property name="text">
-              <string>1</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>1</string>
-             </property>
-            </item>
-           </item>
           </widget>
           <widget class="QPushButton" name="pushButton">
            <property name="geometry">
@@ -891,7 +873,7 @@ background-color: rgb(242, 242, 242);</string>
                   <number>0</number>
                  </property>
                  <item>
-                  <widget class="QListWidget" name="chatMessageListWidget">
+                  <widget class="QListView" name="chatMessageListView">
                    <property name="styleSheet">
                     <string notr="true">QListWidget::item:hover 
 { 

@@ -175,6 +175,11 @@ void Register::judgeCanLogin(QString account, QString password)
             chatMainwindow->connectToServer(ui->accountLineEdit->text());
             qDebug()<<ui->accountLineEdit->text()+"ui->accountLineEdit->text()";
 
+            QVector<QString> friends;
+            friends.push_back("zhoumi");
+            friends.push_back("21344");
+            friends.push_back("1");
+            chatMainwindow->initMyself(ui->accountLineEdit->text(),friends);
             chatMainwindow->show();
             connect(chatMainwindow,&ChatMainWindow::exitWindow,this,[=](){
                 //析构

@@ -17,6 +17,17 @@
 #include<QAudioOutput>
 #include<QTcpSocket>
 #include<QHostAddress>
+#include"ListItemDelegate.h"
+#include<QStringListModel>
+#include<QString>
+#include<QTimer>  //延时
+#include<QPixmap> //截图
+#include<QScreen>
+#include<QClipboard>
+#include<QThread>
+#include<QMessageBox>
+#include"ListItemModel.h"
+#include"People.h"
 namespace Ui {
 class ChatMainWindow;
 }
@@ -26,16 +37,6 @@ typedef struct listItem
     QListWidgetItem* item;
     theFriendMessage* widget;
 }ListItem;
-typedef struct listMessageItem
-{
-    QListWidgetItem* item;
-    ChatLeftWidget* widget;
-}ListMessageItem1;
-typedef struct listMessageItem2
-{
-    QListWidgetItem* item;
-    ChatRightWidget* widget;
-}ListMessageItem2;
 
 class ChatMainWindow : public QMainWindow
 {
@@ -50,7 +51,8 @@ public:
     void keyPressEvent(QKeyEvent *event);
     void initMessageChatList();             //初始化聊天窗口
     void connectToServer(QString accountName); //连接到服务端
-    void sendNameToServer(QString accountName);                   //客户端连接到服务端时，通过发送一个writeline发送自己的account名字
+    void sendNameToServer(QString accountName);  //客户端连接到服务端时，通过发送一个writeline发送自己的account名字
+    void initMyself(QString account,QVector<QString> friends);
 signals:
     void exitWindow();      //退出
     void ctrlEnterPressed();//ctrl+enter=发送消息
@@ -70,19 +72,31 @@ private slots:
 
     void onConnect();           //打印连接到服务端后这个自己的socket的ip和port
     void onSocketReadyRead();   //客户端要接受消息了
+    void on_cutButton_clicked();
+    void ScreenShot();  //截屏
 
+    void on_friendsTreeWidget_currentItemChanged(QTreeWidgetItem *current, QTreeWidgetItem *previous);
+
+signals:
+    void sendMessage(QString mes);
+    void getMessage(QString mes);
 private:
     Ui::ChatMainWindow *ui;
 
 
     QVector<ListItem> _chatItems;               //聊天大纲显示
-    QVector<ListMessageItem1> _chatListItems1;   //主聊天窗口
-     QVector<ListMessageItem2> _chatListItems2;   //主聊天窗口
     QMediaPlayer* musicPlayer;//音乐播放器，小插件
     bool isPlaying;           //音乐是否在播放
     QTcpSocket* _socket;      //当前这个客户端的套接字
-    //QString accountName;      //登录的这个账号的名字
+
     QString beAcceptedAccount;   //此时要发送消息的被接收者
+
+    QMap<QString,QStringListModel*> Messagemodel;
+    ListItemDelegate *MessageDelegate;
+
+    People* mySelf;         //自己的所有信息
+
+    QVector<QTreeWidgetItem*> friendsItems;  //好友列表中的项
 };
 
 #endif // CHATMAINWINDOW_H

@@ -122,7 +122,7 @@ void MainWidget::onSocketReadyRead()
                 haveGetPeople=true;
 
                 //接下来就是发消息到服务端
-                sendMessageToAccepter(recipient,content);
+                sendMessageToAccepter(recipient,content,_clientInfo.accountName);
             }
 
         }
@@ -130,7 +130,7 @@ void MainWidget::onSocketReadyRead()
 
     }
 }
-void MainWidget::sendMessageToAccepter(QString accepter, QString message)
+void MainWidget::sendMessageToAccepter(QString accepter, QString message,QString sender)
 {
     bool haveGetPeople=false;
 
@@ -142,6 +142,8 @@ void MainWidget::sendMessageToAccepter(QString accepter, QString message)
             //服务端发消息
 
             QByteArray str=message.toUtf8();
+            QByteArray name=sender.toUtf8();
+            str=name+"###"+str;
             str.append('\n');
             _clientInfo.clientSocket->write(str);
         }

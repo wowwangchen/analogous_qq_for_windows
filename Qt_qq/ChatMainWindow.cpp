@@ -34,11 +34,11 @@ ChatMainWindow::~ChatMainWindow()
     }
     _chatItems.clear();
 
-//    for (QTreeWidgetItem* item : friendsItems)
-//    {
-//        delete item; // 释放内存
-//        item = nullptr; // 将指针设置为nullptr
-//    }
+    //    for (QTreeWidgetItem* item : friendsItems)
+    //    {
+    //        delete item; // 释放内存
+    //        item = nullptr; // 将指针设置为nullptr
+    //    }
     friendsItems.clear();
 
     delete musicPlayer;
@@ -61,7 +61,6 @@ void ChatMainWindow::setAllStyleSheet()
     //图标
     QIcon iconIcon(":/picture/icon.jpg");
     setWindowIcon(iconIcon);
-    setWindowTitle(" ");
 
     //搜索栏
     ui->searchLineEdit->setPlaceholderText("🔍搜索");
@@ -191,7 +190,7 @@ void ChatMainWindow::initMyself(QString account,QVector<QString> friends)
 {
     this->mySelf->account=account;
     this->mySelf->friends=friends;
-    ui->mynameLabel->setText(account);
+    setWindowTitle(mySelf->account+"----USER");
     initFriends();
 }
 
@@ -342,6 +341,7 @@ void ChatMainWindow::onSocketReadyRead()
 {
     QString sender="";
     QString message=_socket->readLine();
+    qDebug()<<"message"<<message;
 
     //取出发消息的人的account和消息
     while(_socket->canReadLine())
@@ -349,34 +349,76 @@ void ChatMainWindow::onSocketReadyRead()
         message+=_socket->readLine();
     }
     while (!message.isEmpty() && message.endsWith('\n'))
-        message = message.chopped(1); // 移除末尾的一个字符（换行符）
+        message = message.chopped(1); // 移除末尾的换行符
+
+    //发送文件
+    if(message=="###ok")
+    {
+        qDebug()<<"ok";
+        QFile file(filePath);
+        if (!file.open(QIODevice::ReadWrite))
+        {
+            //读取文件失败
+            return;
+        }
+        qint64 currentlen = 0;//当前已经发送的大小
+        qint64 allLength = file.size();//总文件大小
+        do
+        {
+            char data[1024];
+            qint64 msize = file.read(data, 1024);//读文件放入打他数组中，返回读取到的大小
+            _socket->write(data, msize);//把读取到的data数据发送给服务器
+            currentlen += msize;//实时获取当前发送的文件大小
+        } while (currentlen < allLength);//当发送文件等于文件大小时，发送完毕，循环结束
+
+        return;
+
+    }
 
     QStringList parts = message.split("###");
+    qDebug()<<"parts:"<<parts;
     if(parts.size()==2)
     {
         sender=parts[0];
         message=parts[1];
+
+        //让delegate识别，左对齐
+        message="a1`"+message;
+
+        //
+        //通过名字来map出对应的model显示它们的聊天记录
+        QStringListModel* _model=Messagemodel[sender];
+        if(_model==nullptr)
+        {
+            QStringListModel* model=new QStringListModel;
+            Messagemodel[sender]=model;
+            _model=model;
+        }
+        //ui->chatMessageListView->setModel(_model);
+        QStringList itemlist = _model->stringList();
+        itemlist.append(message);
+        _model->setStringList(itemlist);
     }
 
-
-    //让delegate识别，左对齐
-    message="a1`"+message;
-
-
-
-    //通过名字来map出对应的model显示它们的聊天记录
-    QStringListModel* _model=Messagemodel[sender];
-    if(_model==nullptr)
+    else
     {
-        QStringListModel* model=new QStringListModel;
-        Messagemodel[sender]=model;
-        _model=model;
-    }
-    //ui->chatMessageListView->setModel(_model);
-    QStringList itemlist = _model->stringList();
-    itemlist.append(message);
-    _model->setStringList(itemlist);
+        parts=message.split("{{{}}}");
+        sender=parts[0];
+        QString filePath=parts[1];
+        filePath="{{{}}}"+filePath;
 
+        QStringListModel* _model=Messagemodel[sender];
+        if(_model==nullptr)
+        {
+            QStringListModel* model=new QStringListModel;
+            Messagemodel[sender]=model;
+            _model=model;
+        }
+
+        QStringList itemlist = _model->stringList();
+        itemlist.append(filePath);
+        _model->setStringList(itemlist);
+    }
 
     ui->chatMessageListView->update();
 
@@ -443,5 +485,47 @@ void ChatMainWindow::on_friendsTreeWidget_currentItemChanged(QTreeWidgetItem *cu
         _model=model;
     }
     ui->chatMessageListView->setModel(_model);
+}
+
+
+void ChatMainWindow::on_selectFileButton_clicked()
+{
+    qDebug()<<"on_selectFileButton_clicked";
+
+    filePath = QFileDialog::getOpenFileName(nullptr, "选择文件", "", "ALL FILES(*.*)");
+
+    //如果文件不为空，则继续
+    if (!filePath.isEmpty())
+    {
+        // 进行文件传输逻辑处理
+        QFile file(filePath);
+        //获取文件的类型
+        QFileInfo fileInfo(filePath);
+        //file###高三###100###zhoumi
+        qDebug()<<"size:"<<fileInfo.size();
+        QString head="file###"+fileInfo.fileName()+"###"+QString::number(fileInfo.size())+"###"+ui->nameLabel->text();
+        qDebug()<<head;
+        _socket->write(head.toUtf8());
+
+
+
+        QStringListModel* _model=Messagemodel[ui->nameLabel->text()];
+        if(_model==nullptr)
+        {
+            QStringListModel* model=new QStringListModel;
+            Messagemodel[ui->nameLabel->text()]=model;
+            _model=model;
+        }
+        ui->chatMessageListView->setModel(_model);
+        QStringList itemlist = _model->stringList();
+        itemlist.append("已发送文件:"+fileInfo.fileName());
+        _model->setStringList(itemlist);
+
+
+    }
+    else
+    {
+        qDebug()<<"file is empty";
+    }
 }
 

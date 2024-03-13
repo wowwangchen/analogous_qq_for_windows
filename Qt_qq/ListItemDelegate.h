@@ -15,6 +15,8 @@
 #include<QRect>
 #include<QStyleOptionViewItem>
 #include<QApplication>
+#include<QTextCodec>
+#include<QStyleOptionButton>
 class ListItemDelegate:public QStyledItemDelegate
 {
     Q_OBJECT

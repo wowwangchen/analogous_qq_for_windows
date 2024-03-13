@@ -28,6 +28,9 @@
 #include<QMessageBox>
 #include"ListItemModel.h"
 #include"People.h"
+#include<QFile>
+#include<QFileDialog>
+#include<QFileInfo>
 namespace Ui {
 class ChatMainWindow;
 }
@@ -77,6 +80,8 @@ private slots:
 
     void on_friendsTreeWidget_currentItemChanged(QTreeWidgetItem *current, QTreeWidgetItem *previous);
 
+    void on_selectFileButton_clicked();
+
 signals:
     void sendMessage(QString mes);
     void getMessage(QString mes);
@@ -97,6 +102,7 @@ private:
     People* mySelf;         //自己的所有信息
 
     QVector<QTreeWidgetItem*> friendsItems;  //好友列表中的项
+    QString filePath;
 };
 
 #endif // CHATMAINWINDOW_H

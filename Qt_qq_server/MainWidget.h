@@ -6,6 +6,8 @@
 #include<QTcpSocket>
 #include<QHostInfo>
 #include<QTimer>
+#include<QByteArray>
+#include<QFile>
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWidget; }
 QT_END_NAMESPACE
@@ -26,13 +28,23 @@ public:
     ~MainWidget();
     void setServer();
     void sendMessageToAccepter(QString accepter,QString message,QString sender);
+    void sendFileToAccepter(QString accepter,QByteArray message,QString sender);
 public slots:
-    void onSocketReadyRead();
+    void onSocketReadyRead(CLIENTINFO& clientInfo);
 
 private:
     Ui::MainWidget *ui;
     QTcpServer* server;
     //QTcpSocket* clientSocket;
     QVector<CLIENTINFO> _clients;
+    bool ishead;
+    bool isFileMessage;
+
+    QString fileName;
+    int fileSize;//接收文件的总大小
+    int recvSize;//当前接收文件的大小
+    QByteArray filebuf;//当前接收的文件数据
+
+    QString recipient;
 };
 #endif // MAINWIDGET_H

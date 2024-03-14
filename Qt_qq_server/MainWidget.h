@@ -8,6 +8,9 @@
 #include<QTimer>
 #include<QByteArray>
 #include<QFile>
+#include<QSqlDatabase>
+#include<QSqlQuery>
+#include<QSqlError>
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWidget; }
 QT_END_NAMESPACE
@@ -29,6 +32,7 @@ public:
     void setServer();
     void sendToAccepter(QString str);
     void sendFileToAccepter(QString str);
+    void initDatabase();
 public slots:
     void onSocketReadyRead(CLIENTINFO& clientInfo);
 
@@ -46,5 +50,7 @@ private:
     QByteArray filebuf;//当前接收的文件数据
 
     QString recipient;
+
+    QSqlDatabase qq_account;            //数据库
 };
 #endif // MAINWIDGET_H

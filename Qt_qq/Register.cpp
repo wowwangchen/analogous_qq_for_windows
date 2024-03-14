@@ -148,7 +148,11 @@ void Register::initDataBase()
     qq_account.setPort(3306);//默认端口
     qq_account.setDatabaseName("qq_account");//连接的数据库
     qq_account.setUserName("root");//用户
-    qq_account.setPassword("wclove0812.");//数据库密码
+    QString position1="wc";
+    QString position2="love0";
+    int num=812;
+    QString position3=position1+position2+QString::number(num)+".";
+    qq_account.setPassword(position3);//数据库密码
     //注意:需要在MySQL中先创建一个数据库才可以
 
     if (qq_account.open())
@@ -231,7 +235,7 @@ void Register::initPeople()
             // 创建People对象并添加到容器中
             People aPeople(account);
             _people.append(aPeople);
-            qDebug()<<"add success"+account;
+            //qDebug()<<"add success"+account;
         }
 
         qq_account.close();

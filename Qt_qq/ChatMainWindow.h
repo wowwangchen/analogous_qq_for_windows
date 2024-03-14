@@ -31,6 +31,7 @@
 #include<QFile>
 #include<QFileDialog>
 #include<QFileInfo>
+#include"AddFriend.h"
 namespace Ui {
 class ChatMainWindow;
 }
@@ -56,6 +57,8 @@ public:
     void connectToServer(QString accountName); //连接到服务端
     void sendNameToServer(QString accountName);  //客户端连接到服务端时，通过发送一个writeline发送自己的account名字
     void initMyself(QString account,QVector<QString> friends);
+        void addFriend(QString account); //添加好友
+    bool judgeIsInFriendList(QString mightPeople);
 signals:
     void exitWindow();      //退出
     void ctrlEnterPressed();//ctrl+enter=发送消息
@@ -82,6 +85,8 @@ private slots:
 
     void on_selectFileButton_clicked();
 
+    void on_addFriendButton_clicked();
+
 signals:
     void sendMessage(QString mes);
     void getMessage(QString mes);
@@ -98,11 +103,13 @@ private:
 
     QMap<QString,QStringListModel*> Messagemodel;
     ListItemDelegate *MessageDelegate;
-
+    AddFriend* addFriendWidget;     //添加好友的页面
     People* mySelf;         //自己的所有信息
 
     QVector<QTreeWidgetItem*> friendsItems;  //好友列表中的项
-    QString filePath;
+
+
+    QString filePath;    //文件路径
 };
 
 #endif // CHATMAINWINDOW_H

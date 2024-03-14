@@ -46,11 +46,20 @@ ChatMainWindow::~ChatMainWindow()
     delete _socket;
     delete MessageDelegate;
 
+    //发送的消息
     for (QStringListModel* model : Messagemodel)
     {
         delete model;
     }
     Messagemodel.clear();
+
+
+    //好友列表
+    for (QTreeWidgetItem* item : friendsItems)
+    {
+        delete item;
+    }
+    friendsItems.clear();
 
     delete mySelf;
     emit exitWindow();
@@ -120,14 +129,22 @@ void ChatMainWindow::setAllStyleSheet()
 
 
     //view的model与delegate
-
     MessageDelegate=new ListItemDelegate(ui->chatMessageListView);
     ui->chatMessageListView->setItemDelegate(MessageDelegate);
 
-
+    //个人信息
     this->mySelf=new People("-1");
 
+    //按钮提示
+    ui->selectFileButton->setToolTip("send file");
+    ui->selectPictureButton->setToolTip("send picture");
+    ui->faceButton->setToolTip("select emoji");
+    ui->cutButton->setToolTip("screenShot");
+    ui->addFriendButton->setToolTip("add friend");
 
+    //添加好友的页面
+    addFriendWidget=new AddFriend();
+    addFriendWidget->hide();
 }
 
 void ChatMainWindow::initChat()
@@ -186,12 +203,38 @@ void ChatMainWindow::sendNameToServer(QString accountName)
 
 }
 
+
+//这里初始化了好友列表
 void ChatMainWindow::initMyself(QString account,QVector<QString> friends)
 {
     this->mySelf->account=account;
     this->mySelf->friends=friends;
     setWindowTitle(mySelf->account+"----USER");
-    initFriends();
+    initFriends();   //这里初始化了好友列表
+}
+
+void ChatMainWindow::addFriend(QString account)
+{
+    QTreeWidgetItem* firstItem = ui->friendsTreeWidget->topLevelItem(0);
+    if (firstItem)
+    {
+        QTreeWidgetItem* item = new QTreeWidgetItem(firstItem);
+        item->setText(0, account);
+        firstItem->addChild(item);
+
+        friendsItems.push_back(item);
+    }
+}
+
+bool ChatMainWindow::judgeIsInFriendList(QString mightPeople)
+{
+    for (int i=0;i<mySelf->friends.size();i++)
+    {
+        QString friendName=mySelf->friends[i];
+        if(friendName==mightPeople)
+            return true;  //在里面
+    }
+    return false;
 }
 
 void ChatMainWindow::ScreenShot()
@@ -218,12 +261,14 @@ void ChatMainWindow::ScreenShot()
 
 void ChatMainWindow::initFriends()
 {
+    //父节点，分组
     QTreeWidgetItem* firstItem =new QTreeWidgetItem(ui->friendsTreeWidget); // 获取第一个顶级项目
     friendsItems.push_back(firstItem);
     firstItem->setText(0,"朋友");
     ui->friendsTreeWidget->addTopLevelItem(firstItem);
 
-    qDebug()<<mySelf->friends.size();
+
+    qDebug()<<"mySelf->friends.size()"<<mySelf->friends.size();
     for (int i=0;i<mySelf->friends.size();i++)
     {
         QString friendName=mySelf->friends[i];
@@ -349,6 +394,32 @@ void ChatMainWindow::onSocketReadyRead()
         str = str.chopped(1); // 移除末尾的换行符
 
     QStringList strlist = str.split("###");
+
+
+    if(str.startsWith("###addPeople###"))
+    {
+        str.remove(0,15);
+        if(str.startsWith("true"))
+        {
+            str.remove(0,4);
+            if(judgeIsInFriendList(str)==false)
+            {
+                QMessageBox::information(this,"Tips","add successfully");
+                mySelf->friends.push_back(str);
+                addFriend(str);
+            }
+            else
+            {
+                QMessageBox::information(this,"Tips","the people is your friend, no need to add twice");
+            }
+
+        }
+        else if(str.startsWith("false"))
+        {
+            QMessageBox::information(this,"Tips","add failed");
+        }
+        return;
+    }
 
 
     //文本消息
@@ -539,4 +610,17 @@ void ChatMainWindow::on_selectFileButton_clicked()
         qDebug()<<"file is empty";
     }
 }
+
+
+void ChatMainWindow::on_addFriendButton_clicked()
+{
+    addFriendWidget->show();
+    connect(addFriendWidget,&AddFriend::addFriend,this,[=]()mutable{
+
+        QString message="###addPeople###"+addFriendWidget->getAccount();
+        _socket->write(message.toUtf8());
+        addFriendWidget->hide();
+    });
+}
+
 

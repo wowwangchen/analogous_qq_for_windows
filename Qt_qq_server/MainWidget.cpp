@@ -7,6 +7,7 @@ MainWidget::MainWidget(QWidget *parent)
 {
     ui->setupUi(this);
 
+    initDatabase();
     server=new QTcpServer;
     ishead=true;
     isFileMessage=false;
@@ -97,6 +98,34 @@ void MainWidget::onSocketReadyRead(CLIENTINFO& clientInfo1)
     QString str=clientInfo1.clientSocket->readAll();
     QStringList strlist =str.split("###");
 
+    //从数据库中找好友
+    if(str.startsWith("###addPeople###"))
+    {
+        qq_account.open();
+        str.remove(0,15); //剩下的就是要查找的账号名
+        qDebug()<<"str:"<<str;
+        QSqlQuery query;
+        QString queryString = QString("SELECT account FROM account_password WHERE account = '%1'")
+                                  .arg(str);
+        query.exec(queryString);
+
+        if (query.next())
+        {
+            str="###addPeople###true"+str;
+            clientInfo1.clientSocket->write(str.toUtf8());
+            qDebug() << "find the people!";
+        }
+        else
+        {
+            // 没有找到匹配的数据
+            str="###addPeople###false"+str;
+            clientInfo1.clientSocket->write(str.toUtf8());
+            qDebug() << "not find the people!";
+        }
+        qq_account.close();
+        return;
+    }
+
     // 文本数据包格式：群聊标志 + 发信息员工QQ号 + 收信息员工QQ号（群QQ号） + 信息类型(0) + 数据
     // 表情数据包格式：群聊标志 + 发信息员工QQ号 + 收信息员工QQ号（群QQ号） + 信息类型(0) + 表情个数 + images + 数据
     // 文件数据包格式：群聊标志 + 发信息员工QQ号 + 收信息员工QQ号（群QQ号） + 信息类型(1) + 文件长度 +文件名称 + 文件内容
@@ -149,9 +178,33 @@ void MainWidget::sendFileToAccepter(QString str)
         if(clientInfo.accountName==strlist[2])
         {
             clientInfo.clientSocket->write(str.toUtf8());
-
         }
         if(havegetAccepter) return;
     }
+}
+
+void MainWidget::initDatabase()
+{
+    qq_account=QSqlDatabase::addDatabase("QMYSQL");
+    qq_account.setHostName("localhost");//本地主机IP和"127.0.0.1"一样
+    qq_account.setPort(3306);//默认端口
+    qq_account.setDatabaseName("qq_account");//连接的数据库
+    qq_account.setUserName("root");//用户
+    QString position1="wc";
+    QString position2="love0";
+    int num=812;
+    QString position3=position1+position2+QString::number(num)+".";
+    qq_account.setPassword("wclove0812.");//数据库密码
+    //注意:需要在MySQL中先创建一个数据库才可以
+
+    if (qq_account.open())
+    {
+        qDebug()<<"connect Success!!!";
+    }
+    else
+    {
+        qDebug()<<"connect falied!!!";
+    }
+    qq_account.close();
 }
 

@@ -43,8 +43,6 @@ MainWidget::MainWidget(QWidget *parent)
                     break;
                 }
             }
-
-            qDebug()<<"mutable";
         });
     });
 
@@ -77,10 +75,9 @@ void MainWidget::setServer()
 }
 
 
+
 void MainWidget::onSocketReadyRead(CLIENTINFO& clientInfo1)
 {
-    QString content;
-
     if(clientInfo1.isFirstConnect==true)
     {
         QString mightName=clientInfo1.clientSocket->readLine();
@@ -88,97 +85,52 @@ void MainWidget::onSocketReadyRead(CLIENTINFO& clientInfo1)
             mightName = mightName.chopped(1); // 移除末尾的一个字符（换行符）
         clientInfo1.accountName=mightName;
 
-        for (CLIENTINFO& _client : _clients)
-        {
-            qDebug()<<_client.accountName;
-        }
+//        for (CLIENTINFO& _client : _clients)
+//        {
+//            qDebug()<<_client.accountName;
+//        }
 
         clientInfo1.isFirstConnect=false; //之后全都是false
-        qDebug()<<clientInfo1.accountName+"_clientInfo.accountName";
         return;
     }
 
+    QString str=clientInfo1.clientSocket->readAll();
+    QStringList strlist =str.split("###");
 
-    QByteArray buf =clientInfo1.clientSocket->readAll();
-    QString message=QString(buf);
-    //qDebug()<<"buf:"<<buf;
-    //qDebug()<<"message:"<<message;
+    // 文本数据包格式：群聊标志 + 发信息员工QQ号 + 收信息员工QQ号（群QQ号） + 信息类型(0) + 数据
+    // 表情数据包格式：群聊标志 + 发信息员工QQ号 + 收信息员工QQ号（群QQ号） + 信息类型(0) + 表情个数 + images + 数据
+    // 文件数据包格式：群聊标志 + 发信息员工QQ号 + 收信息员工QQ号（群QQ号） + 信息类型(1) + 文件长度 +文件名称 + 文件内容
 
-
-    //如果是头并且是file###开头
-    if (ishead==true&&isFileMessage==false&&message.startsWith("file###"))
+    //消息类型为0:文本消息
+    if(strlist[3]=="0"||strlist[3]=="1")
     {
-        QStringList strlist = message.split("###");
-        qDebug()<<strlist;
-        fileName = strlist.at(1);               //解析帧头文件名
-        fileSize = strlist.at(2).toInt();           //解析帧头文件大小
-        ishead = false;//下次接收到的文件就是我们的数据
-        recvSize=0;    //当前接收的文件大小
-        filebuf.clear();
-        recipient=strlist.at(3);
-        clientInfo1.clientSocket->write("###ok");
-        isFileMessage=true;
-        return;
+
+        ui->textEdit->append(strlist[1]+" send message to "+strlist[2]);
+
+        //接下来就是发消息到服务端
+        sendToAccepter(str);
     }
 
-    //不是头，是文件信息
-    else if(ishead==false&&isFileMessage==true)
-    {
-        filebuf.append(buf);  //二进制存储
-        recvSize += buf.size();//每接收一次文件，当前文件大小+1
-        //当接收文件大小等于总文件大小，即文件数据接收完毕
-        if (recvSize>=fileSize)
-        {
-            //保存文件
-            //sendFileToAccepter(recipient,filebuf,_clientInfo1.accountName);
-            isFileMessage=false;
-            ishead=true;
 
-            sendFileToAccepter(recipient,filebuf,clientInfo1.accountName);
-
-            QFile file("F:/"+fileName);
-            file.open(QIODevice::WriteOnly);
-            file.write(filebuf);
-            file.close();
-            return;
-        }
-    }
-
-    //不是文件信息
-    else if(isFileMessage==false)
-    {
-        qDebug()<<"##########3";
-        QStringList parts = message.split("###");
-        if (parts.size() == 2)
-        {
-            recipient = parts[0];
-            content = parts[1];
-
-            ui->textEdit->append(clientInfo1.accountName+" send message to "+recipient);
-
-            //接下来就是发消息到服务端
-            sendMessageToAccepter(recipient,content,clientInfo1.accountName);
-        }
-    }
+    //    0         1           2               3                   4                   5           6
+    //str=sign+"###"+sender+"###"+accepter+"###"+messageType+"###"+messageLength+"###"+fileName+"###"+message;
+    //消息类型为1：文件
 }
 
 
 
-void MainWidget::sendMessageToAccepter(QString accepter, QString message,QString sender)
+void MainWidget::sendToAccepter(QString str)
 {
     bool havegetAccepter=false;
+    QStringList strlist =str.split("###");
     for(int i=0;i<_clients.size();i++)
     {
         CLIENTINFO clientInfo=_clients.at(i);
 
-        if(clientInfo.accountName==accepter)
+        if(clientInfo.accountName==strlist[2])
         {
-            qDebug()<<"getit";
-            QTcpSocket* socket=clientInfo.clientSocket;
+            clientInfo.clientSocket->write(str.toUtf8());
 
-            QString str=sender+"###"+message;
-            socket->write(str.toUtf8());
-            havegetAccepter=true;
         }
         if(havegetAccepter) return;
     }
@@ -186,20 +138,18 @@ void MainWidget::sendMessageToAccepter(QString accepter, QString message,QString
 
 }
 
-void MainWidget::sendFileToAccepter(QString accepter, QByteArray message, QString sender)
+void MainWidget::sendFileToAccepter(QString str)
 {
     bool havegetAccepter=false;
+    QStringList strlist =str.split("###");
     for(int i=0;i<_clients.size();i++)
     {
         CLIENTINFO clientInfo=_clients.at(i);
 
-        if(clientInfo.accountName==accepter)
+        if(clientInfo.accountName==strlist[2])
         {
-            QTcpSocket* socket=clientInfo.clientSocket;
+            clientInfo.clientSocket->write(str.toUtf8());
 
-            QString str=sender+"{{{}}}F:/"+fileName;  //将文件路径发送过去
-            socket->write(str.toUtf8());
-            havegetAccepter=true;
         }
         if(havegetAccepter) return;
     }

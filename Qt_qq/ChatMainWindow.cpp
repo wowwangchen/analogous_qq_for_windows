@@ -337,55 +337,30 @@ void ChatMainWindow::onConnect()
     qDebug()<<"**Peer Port:"+QString::number(_socket->peerPort())+"**";
 }
 
+
+
 void ChatMainWindow::onSocketReadyRead()
 {
-    QString sender="";
-    QString message=_socket->readLine();
-    qDebug()<<"message"<<message;
+    //接收消息包
+    QString str=_socket->readAll();
+    qDebug()<<str;
 
-    //取出发消息的人的account和消息
-    while(_socket->canReadLine())
+    while (!str.isEmpty() && str.endsWith('\n'))
+        str = str.chopped(1); // 移除末尾的换行符
+
+    QStringList strlist = str.split("###");
+
+
+    //文本消息
+    if(strlist[3]=="0")
     {
-        message+=_socket->readLine();
-    }
-    while (!message.isEmpty() && message.endsWith('\n'))
-        message = message.chopped(1); // 移除末尾的换行符
-
-    //发送文件
-    if(message=="###ok")
-    {
-        qDebug()<<"ok";
-        QFile file(filePath);
-        if (!file.open(QIODevice::ReadWrite))
-        {
-            //读取文件失败
-            return;
-        }
-        qint64 currentlen = 0;//当前已经发送的大小
-        qint64 allLength = file.size();//总文件大小
-        do
-        {
-            char data[1024];
-            qint64 msize = file.read(data, 1024);//读文件放入打他数组中，返回读取到的大小
-            _socket->write(data, msize);//把读取到的data数据发送给服务器
-            currentlen += msize;//实时获取当前发送的文件大小
-        } while (currentlen < allLength);//当发送文件等于文件大小时，发送完毕，循环结束
-
-        return;
-
-    }
-
-    QStringList parts = message.split("###");
-    qDebug()<<"parts:"<<parts;
-    if(parts.size()==2)
-    {
-        sender=parts[0];
-        message=parts[1];
+        QString sender=strlist[1];
+        QString message=strlist[4];
 
         //让delegate识别，左对齐
         message="a1`"+message;
 
-        //
+
         //通过名字来map出对应的model显示它们的聊天记录
         QStringListModel* _model=Messagemodel[sender];
         if(_model==nullptr)
@@ -394,19 +369,35 @@ void ChatMainWindow::onSocketReadyRead()
             Messagemodel[sender]=model;
             _model=model;
         }
-        //ui->chatMessageListView->setModel(_model);
         QStringList itemlist = _model->stringList();
         itemlist.append(message);
         _model->setStringList(itemlist);
     }
-
-    else
+    //文件
+    else if(strlist[3]=="1")
     {
-        parts=message.split("{{{}}}");
-        sender=parts[0];
-        QString filePath=parts[1];
-        filePath="{{{}}}"+filePath;
+        QString sender=strlist[1];
+        QMessageBox::information(this,"Tips","you accept file from user----"+strlist[1]+":"+strlist[5]);
 
+        filePath = QFileDialog::getExistingDirectory(nullptr, "文件保存路径","/");
+        if (!filePath.endsWith("/"))
+        {
+            filePath += "/";
+        }
+        QFile file(filePath+strlist[5]);
+
+        if (!file.open(QIODevice::WriteOnly))
+        {
+            QMessageBox::information(nullptr, "Tips", "save file fail!");
+        }
+        else
+        {
+            file.write(strlist[6].toUtf8());
+            file.close();
+            QMessageBox::information(nullptr, "Tips", "save file success!");
+        }
+
+        //通过名字来map出对应的model显示它们的聊天记录
         QStringListModel* _model=Messagemodel[sender];
         if(_model==nullptr)
         {
@@ -414,23 +405,31 @@ void ChatMainWindow::onSocketReadyRead()
             Messagemodel[sender]=model;
             _model=model;
         }
-
         QStringList itemlist = _model->stringList();
-        itemlist.append(filePath);
+        itemlist.append("a1`get file from user----"+sender+":"+strlist[5]);
         _model->setStringList(itemlist);
+
     }
 
     ui->chatMessageListView->update();
-
-
 }
 
 
 
 void ChatMainWindow::on_sendMessageButton_clicked()
 {
+    //消息数据包
+    QString str;
+    QString sign="0";
+    QString sender=mySelf->account;
+    QString accepter=ui->nameLabel->text();
+    QString messageType="0";
     QString message = ui->messageTextEdit->toPlainText();
+
+    //    0         1           2               3                   4
+    str=sign+"###"+sender+"###"+accepter+"###"+messageType+"###"+message;
     ui->messageTextEdit->clear();
+    qDebug()<<str;
 
     // 添加并更新model指向的stringlist
     //每个人对应着一个model
@@ -448,19 +447,12 @@ void ChatMainWindow::on_sendMessageButton_clicked()
 
 
     ui->chatMessageListView->update();
-
-
     //设置焦点最新状态
     ui->chatMessageListView->scrollToBottom();
     ui->messageTextEdit->setFocus();
 
-    QByteArray str=message.toUtf8();
-    QByteArray name=ui->nameLabel->text().toUtf8();
-    str=name+"###"+str;
-    str.append('\n');
-    _socket->write(str);
+    _socket->write(str.toUtf8());
 
-    //qDebug() << "Message sent to server: " << message;
 }
 
 
@@ -490,37 +482,56 @@ void ChatMainWindow::on_friendsTreeWidget_currentItemChanged(QTreeWidgetItem *cu
 
 void ChatMainWindow::on_selectFileButton_clicked()
 {
-    qDebug()<<"on_selectFileButton_clicked";
+    // 文本数据包格式：群聊标志 + 发信息员工QQ号 + 收信息员工QQ号（群QQ号） + 信息类型(0) + 数据
+    // 表情数据包格式：群聊标志 + 发信息员工QQ号 + 收信息员工QQ号（群QQ号） + 信息类型(0) + 表情个数 + images + 数据
+    // 文件数据包格式：群聊标志 + 发信息员工QQ号 + 收信息员工QQ号（群QQ号） + 信息类型(1) + 文件长度 +文件名称 + 文件内容
+
+    //消息数据包
+    QString str;
+    QString sign="0";
+    QString sender=mySelf->account;
+    QString accepter=ui->nameLabel->text();
+    QString messageType="1";
+    QString messageLength;
+    QString fileName;
+    QString message;
+
+
 
     filePath = QFileDialog::getOpenFileName(nullptr, "选择文件", "", "ALL FILES(*.*)");
 
     //如果文件不为空，则继续
     if (!filePath.isEmpty())
     {
-        // 进行文件传输逻辑处理
         QFile file(filePath);
-        //获取文件的类型
-        QFileInfo fileInfo(filePath);
-        //file###高三###100###zhoumi
-        qDebug()<<"size:"<<fileInfo.size();
-        QString head="file###"+fileInfo.fileName()+"###"+QString::number(fileInfo.size())+"###"+ui->nameLabel->text();
-        qDebug()<<head;
-        _socket->write(head.toUtf8());
-
-
-
-        QStringListModel* _model=Messagemodel[ui->nameLabel->text()];
-        if(_model==nullptr)
+        if(file.open(QIODevice::ReadOnly))
         {
-            QStringListModel* model=new QStringListModel;
-            Messagemodel[ui->nameLabel->text()]=model;
-            _model=model;
-        }
-        ui->chatMessageListView->setModel(_model);
-        QStringList itemlist = _model->stringList();
-        itemlist.append("已发送文件:"+fileInfo.fileName());
-        _model->setStringList(itemlist);
 
+            //获取文件的相关信息
+            QFileInfo fileInfo(filePath);
+
+            messageLength=QString::number(fileInfo.size());
+            fileName=fileInfo.fileName();
+            message=file.readAll();
+            //    0         1           2               3                   4                   5           6
+            str=sign+"###"+sender+"###"+accepter+"###"+messageType+"###"+messageLength+"###"+fileName+"###"+message;
+            qDebug()<<"filename:"<<fileName;
+            _socket->write(str.toUtf8());
+
+
+
+            QStringListModel* _model=Messagemodel[ui->nameLabel->text()];
+            if(_model==nullptr)
+            {
+                QStringListModel* model=new QStringListModel;
+                Messagemodel[ui->nameLabel->text()]=model;
+                _model=model;
+            }
+            ui->chatMessageListView->setModel(_model);
+            QStringList itemlist = _model->stringList();
+            itemlist.append("send file to user----"+accepter+":"+fileInfo.fileName());
+            _model->setStringList(itemlist);
+        }
 
     }
     else

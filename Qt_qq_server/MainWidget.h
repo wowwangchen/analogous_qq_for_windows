@@ -27,8 +27,8 @@ public:
     MainWidget(QWidget *parent = nullptr);
     ~MainWidget();
     void setServer();
-    void sendMessageToAccepter(QString accepter,QString message,QString sender);
-    void sendFileToAccepter(QString accepter,QByteArray message,QString sender);
+    void sendToAccepter(QString str);
+    void sendFileToAccepter(QString str);
 public slots:
     void onSocketReadyRead(CLIENTINFO& clientInfo);
 

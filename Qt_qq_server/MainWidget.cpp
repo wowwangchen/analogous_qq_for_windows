@@ -98,37 +98,11 @@ void MainWidget::onSocketReadyRead(CLIENTINFO& clientInfo1)
     QString str=clientInfo1.clientSocket->readAll();
     QStringList strlist =str.split("###");
 
-    //从数据库中找好友
-    if(str.startsWith("###addPeople###"))
-    {
-        qq_account.open();
-        str.remove(0,15); //剩下的就是要查找的账号名
-        qDebug()<<"str:"<<str;
-        QSqlQuery query;
-        QString queryString = QString("SELECT account FROM account_password WHERE account = '%1'")
-                                  .arg(str);
-        query.exec(queryString);
-
-        if (query.next())
-        {
-            str="###addPeople###true"+str;
-            clientInfo1.clientSocket->write(str.toUtf8());
-            qDebug() << "find the people!";
-        }
-        else
-        {
-            // 没有找到匹配的数据
-            str="###addPeople###false"+str;
-            clientInfo1.clientSocket->write(str.toUtf8());
-            qDebug() << "not find the people!";
-        }
-        qq_account.close();
-        return;
-    }
 
     // 文本数据包格式：群聊标志 + 发信息员工QQ号 + 收信息员工QQ号（群QQ号） + 信息类型(0) + 数据
-    // 表情数据包格式：群聊标志 + 发信息员工QQ号 + 收信息员工QQ号（群QQ号） + 信息类型(0) + 表情个数 + images + 数据
     // 文件数据包格式：群聊标志 + 发信息员工QQ号 + 收信息员工QQ号（群QQ号） + 信息类型(1) + 文件长度 +文件名称 + 文件内容
+    // 表情数据包格式：群聊标志 + 发信息员工QQ号 + 收信息员工QQ号（群QQ号） + 信息类型(2) + 表情个数 + images + 数据
+    // 加好友数据包格式：是要加的人(0)还是被加的人(1) + 发消息员工QQ号 + 被加员工QQ号 + 信息类型(3) +是否找到
 
     //消息类型为0:文本消息
     if(strlist[3]=="0"||strlist[3]=="1")
@@ -140,10 +114,36 @@ void MainWidget::onSocketReadyRead(CLIENTINFO& clientInfo1)
         sendToAccepter(str);
     }
 
+    else if(strlist[3]=="3")
+    {
+        qq_account.open();
+        QString accepter; //剩下的就是要查找的账号名
+        accepter=strlist[2];
+        qDebug()<<"accepter:"<<accepter;
 
-    //    0         1           2               3                   4                   5           6
-    //str=sign+"###"+sender+"###"+accepter+"###"+messageType+"###"+messageLength+"###"+fileName+"###"+message;
-    //消息类型为1：文件
+        QSqlQuery query;
+        QString queryString = QString("SELECT account FROM account_password WHERE account = '%1'")
+                                  .arg(accepter);
+        query.exec(queryString);
+
+        if (query.next())
+        {
+            str+="###true";
+            clientInfo1.clientSocket->write(str.toUtf8());
+            qDebug() << "find the people!";
+            addFriendToAccpeter(str);
+        }
+        else
+        {
+            // 没有找到匹配的数据
+            str+="###false";
+            clientInfo1.clientSocket->write(str.toUtf8());
+            qDebug() << "not find the people!";
+        }
+        qq_account.close();
+        return;
+    }
+
 }
 
 
@@ -206,5 +206,23 @@ void MainWidget::initDatabase()
         qDebug()<<"connect falied!!!";
     }
     qq_account.close();
+}
+
+void MainWidget::addFriendToAccpeter(QString str)
+{
+    bool havegetAccepter=false;
+    str[0]='1';
+    QStringList strlist =str.split("###");
+    for(int i=0;i<_clients.size();i++)
+    {
+        CLIENTINFO clientInfo=_clients.at(i);
+
+        if(clientInfo.accountName==strlist[2])
+        {
+            clientInfo.clientSocket->write(str.toUtf8());
+
+        }
+        if(havegetAccepter) return;
+    }
 }
 

@@ -66,6 +66,8 @@ else()
             ListItemDelegate.h ListItemDelegate.cpp
             ListItemModel.h ListItemModel.cpp
             AddFriend.h AddFriend.cpp AddFriend.ui
+            EmojiModel.h EmojiModel.cpp
+            EmojiDelegate.h EmojiDelegate.cpp
 
         )
     endif()

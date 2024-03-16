@@ -32,6 +32,9 @@
 #include<QFileDialog>
 #include<QFileInfo>
 #include"AddFriend.h"
+#include"EmojiModel.h"
+#include<QMouseEvent>
+#include"EmojiDelegate.h"
 namespace Ui {
 class ChatMainWindow;
 }
@@ -59,9 +62,14 @@ public:
     void initMyself(QString account,QVector<QString> friends);
         void addFriend(QString account); //添加好友
     bool judgeIsInFriendList(QString mightPeople);
+        void setAllConnect();
 signals:
     void exitWindow();      //退出
     void ctrlEnterPressed();//ctrl+enter=发送消息
+    void sendMessage(QString mes);
+    void getMessage(QString mes);
+protected:
+    void mousePressEvent(QMouseEvent *event);
 
 private slots:
     void on_friendsButton_clicked();
@@ -87,9 +95,9 @@ private slots:
 
     void on_addFriendButton_clicked();
 
-signals:
-    void sendMessage(QString mes);
-    void getMessage(QString mes);
+    void on_faceButton_clicked();
+    void on_emojiView_clicked(const QModelIndex &index);
+
 private:
     Ui::ChatMainWindow *ui;
 
@@ -104,12 +112,17 @@ private:
     QMap<QString,QStringListModel*> Messagemodel;
     ListItemDelegate *MessageDelegate;
     AddFriend* addFriendWidget;     //添加好友的页面
+
     People* mySelf;         //自己的所有信息
 
     QVector<QTreeWidgetItem*> friendsItems;  //好友列表中的项
 
-
     QString filePath;    //文件路径
+    EmojiModel *emojiModel; //表情的listview
+    QListView *emojiView;
+    EmojiDelegate *emojiDelegate;
+
+
 };
 
 #endif // CHATMAINWINDOW_H

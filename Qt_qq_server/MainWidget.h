@@ -33,6 +33,7 @@ public:
     void sendToAccepter(QString str);
     void sendFileToAccepter(QString str);
     void initDatabase();
+    void addFriendToAccpeter(QString str);
 public slots:
     void onSocketReadyRead(CLIENTINFO& clientInfo);
 

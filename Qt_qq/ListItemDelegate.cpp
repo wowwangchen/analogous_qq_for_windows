@@ -9,6 +9,7 @@ ListItemDelegate::ListItemDelegate(QObject* parent)
 
 void ListItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const
 {
+
     QString message = index.data(Qt::DisplayRole).toString();
     QString styleSheet = "font: 22pt \"Segoe Print\";"
                          "font-size: 22px;"
@@ -18,6 +19,16 @@ void ListItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &opti
     QWidget *widget = const_cast<QWidget*>(option.widget);
     widget->setStyleSheet(styleSheet);
 
+    int fontSize = 14;
+    QFont font = painter->font();
+    font.setPointSize(fontSize);
+    painter->setFont(font);
+
+    //调整每个框的大小
+    QRect adjustedRect = option.rect.adjusted(2, 2, -2, -2);
+    adjustedRect.setHeight(adjustedRect.height() + 10);
+
+
 
     //左对齐
     if(message.size()>=3 &&message[0]=="a"&&message[1]=="1"&&message[2]=="`")
@@ -26,8 +37,8 @@ void ListItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &opti
         // 收到的消息，靠左对齐，使用不同的颜色和背景
         painter->setPen(Qt::blue);
         painter->setBrush(QColor(220, 220, 255));
-        painter->drawRect(option.rect.adjusted(2, 2, -2, -2));
-        painter->drawText(option.rect.adjusted(5, 5, -5, -5), Qt::AlignLeft | Qt::AlignVCenter, message);
+        painter->drawRect(adjustedRect.adjusted(2, 2, -2, -2));
+        painter->drawText(adjustedRect.adjusted(5, 5, -5, -5), Qt::AlignLeft | Qt::AlignVCenter, message);
     }
 
 
@@ -43,7 +54,7 @@ void ListItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &opti
 
         painter->setPen(Qt::blue);
         painter->setBrush(QColor(220, 220, 255));
-        painter->drawRect(option.rect.adjusted(2, 2, -2, -2));
+        painter->drawRect(adjustedRect.adjusted(2, 2, -2, -2));
 
         QStyledItemDelegate::paint(painter, option, index);
 
@@ -67,8 +78,8 @@ void ListItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &opti
         // 发送的消息，靠右对齐，使用不同的颜色和背景
         painter->setPen(Qt::darkGreen);
         painter->setBrush(QColor(220, 255, 220));
-        painter->drawRect(option.rect.adjusted(2, 2, -2, -2));
-        painter->drawText(option.rect.adjusted(5, 5, -5, -5), Qt::AlignRight | Qt::AlignVCenter, message);
+        painter->drawRect(adjustedRect.adjusted(2, 2, -2, -2));
+        painter->drawText(adjustedRect.adjusted(5, 5, -5, -5), Qt::AlignRight | Qt::AlignVCenter, message);
     }
 }
 

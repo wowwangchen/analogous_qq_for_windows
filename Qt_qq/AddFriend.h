@@ -3,6 +3,7 @@
 
 #include <QWidget>
 #include<QMovie>
+#include<QGraphicsBlurEffect>
 namespace Ui {
 class AddFriend;
 }

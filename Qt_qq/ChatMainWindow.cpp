@@ -8,18 +8,7 @@ ChatMainWindow::ChatMainWindow(QWidget *parent) :
     setAllStyleSheet();
     initChat();
     initMessageChatList();
-
-    QObject::connect(musicPlayer, &QMediaPlayer::stateChanged, [&](QMediaPlayer::State state) {
-        if (state == QMediaPlayer::PlayingState) {
-            // 音乐正在播放
-            qDebug() << "Music is playing";
-        } else if (state == QMediaPlayer::StoppedState) {
-            // 音乐已停止播放
-            qDebug() << "Music stopped";
-        }
-    });
-
-    connect(_socket,SIGNAL(connected()),this,SLOT(onConnect()));
+    setAllConnect();
 }
 
 
@@ -45,6 +34,10 @@ ChatMainWindow::~ChatMainWindow()
     delete ui;
     delete _socket;
     delete MessageDelegate;
+    delete emojiModel;
+    delete emojiDelegate;
+    emojiView->close();
+    addFriendWidget->close();
 
     //发送的消息
     for (QStringListModel* model : Messagemodel)
@@ -125,8 +118,6 @@ void ChatMainWindow::setAllStyleSheet()
 
     //socket
     _socket=new QTcpSocket;
-    connect(_socket,SIGNAL(readyRead()),this,SLOT(onSocketReadyRead()));
-
 
     //view的model与delegate
     MessageDelegate=new ListItemDelegate(ui->chatMessageListView);
@@ -145,6 +136,19 @@ void ChatMainWindow::setAllStyleSheet()
     //添加好友的页面
     addFriendWidget=new AddFriend();
     addFriendWidget->hide();
+
+
+    //表情
+    emojiModel=new EmojiModel;
+    emojiView=new QListView(this);
+    emojiDelegate=new EmojiDelegate;
+    emojiView->setWindowFlags(Qt::Dialog | Qt::FramelessWindowHint);
+    emojiView->setModel(emojiModel);
+    emojiView->setItemDelegate(emojiDelegate);
+    emojiView->setFlow(QListView::LeftToRight); // 设置项的流动方向为从左到右
+    emojiView->setWrapping(true); // 启用项的换行显示
+    emojiView->hide();
+
 }
 
 void ChatMainWindow::initChat()
@@ -235,6 +239,67 @@ bool ChatMainWindow::judgeIsInFriendList(QString mightPeople)
             return true;  //在里面
     }
     return false;
+}
+
+void ChatMainWindow::setAllConnect()
+{
+    QObject::connect(musicPlayer, &QMediaPlayer::stateChanged, [&](QMediaPlayer::State state) {
+        if (state == QMediaPlayer::PlayingState) {
+            // 音乐正在播放
+            qDebug() << "Music is playing";
+        } else if (state == QMediaPlayer::StoppedState) {
+            // 音乐已停止播放
+            qDebug() << "Music stopped";
+        }
+    });
+
+
+    connect(addFriendWidget,&AddFriend::addFriend,this,[=]()mutable{
+        //消息数据包
+        QString str;
+        QString sign="0";
+        QString sender=mySelf->account;
+        QString accepter;
+        QString messageType="3";
+        bool flag=true;
+        qDebug()<<"进入了@@@@@@@@@@@";
+
+        accepter=addFriendWidget->getAccount();
+        if(accepter==sender)
+        {
+            QMessageBox::information(this,"Tips","You can't add your own as a friend");
+            flag=false;
+            //return;
+        }
+        else if(judgeIsInFriendList(accepter)==true)
+        {
+            QMessageBox::information(this,"Tips","the people is your friend, no need to add twice");
+            flag=false;
+            //return;
+        }
+
+        if(flag)
+        {
+            str=sign+"###"+sender+"###"+accepter+"###"+messageType;
+            _socket->write(str.toUtf8());
+            addFriendWidget->hide();
+        }
+    });
+
+    //socket Read
+    connect(_socket,SIGNAL(readyRead()),this,SLOT(onSocketReadyRead()));
+    //socket connect
+    connect(_socket,SIGNAL(connected()),this,SLOT(onConnect()));
+    //click emoji
+    connect(this->emojiView,&QListView::clicked,this,&ChatMainWindow::on_emojiView_clicked);
+}
+
+void ChatMainWindow::mousePressEvent(QMouseEvent *event)
+{
+    QPoint pos=event->pos();
+    if (!this->emojiView->viewport()->rect().contains(pos))
+        this->emojiView->hide();
+
 }
 
 void ChatMainWindow::ScreenShot()
@@ -396,31 +461,6 @@ void ChatMainWindow::onSocketReadyRead()
     QStringList strlist = str.split("###");
 
 
-    if(str.startsWith("###addPeople###"))
-    {
-        str.remove(0,15);
-        if(str.startsWith("true"))
-        {
-            str.remove(0,4);
-            if(judgeIsInFriendList(str)==false)
-            {
-                QMessageBox::information(this,"Tips","add successfully");
-                mySelf->friends.push_back(str);
-                addFriend(str);
-            }
-            else
-            {
-                QMessageBox::information(this,"Tips","the people is your friend, no need to add twice");
-            }
-
-        }
-        else if(str.startsWith("false"))
-        {
-            QMessageBox::information(this,"Tips","add failed");
-        }
-        return;
-    }
-
 
     //文本消息
     if(strlist[3]=="0")
@@ -481,6 +521,44 @@ void ChatMainWindow::onSocketReadyRead()
         _model->setStringList(itemlist);
 
     }
+
+
+    else if(strlist[3]=="3")
+    {
+        //要加别人的人
+        if(strlist[0]=="0")
+        {
+            //判断找没找到
+            if(strlist[4]=="true")
+            {
+                QMessageBox::information(this,"Tips","add successfully");
+                mySelf->friends.push_back(strlist[2]);
+                addFriend(strlist[2]);
+            }
+            else if(strlist[4]=="false")
+            {
+                QMessageBox::information(this,"Tips","add failed");
+            }
+
+        }
+        //别人加自己
+        else if(strlist[0]=="1")
+        {
+            //如果str[0]是1的话代表是别人加自己，肯定这两个人都存在，只有判断是否已经是自己的好友即可
+            if(judgeIsInFriendList(strlist[1])==false)   //想加自己的人不是自己的好友
+            {
+                QMessageBox::information(this,"Tips","you add a friend----\""+strlist[1]+"\"");
+                mySelf->friends.push_back(strlist[1]);
+                addFriend(strlist[1]);
+            }
+
+        }
+        return;
+    }
+
+
+
+
 
     ui->chatMessageListView->update();
 }
@@ -615,12 +693,35 @@ void ChatMainWindow::on_selectFileButton_clicked()
 void ChatMainWindow::on_addFriendButton_clicked()
 {
     addFriendWidget->show();
-    connect(addFriendWidget,&AddFriend::addFriend,this,[=]()mutable{
-
-        QString message="###addPeople###"+addFriendWidget->getAccount();
-        _socket->write(message.toUtf8());
-        addFriendWidget->hide();
-    });
 }
 
+
+
+void ChatMainWindow::on_faceButton_clicked()
+{
+    QPoint buttonPos = ui->faceButton->mapToGlobal(ui->faceButton->rect().topLeft());
+    emojiView->setGeometry(buttonPos.x(), buttonPos.y() - 10, 200, 100);
+    emojiView->setFixedSize(QSize(ui->chatMessageListView->width()*2.0/3.0,ui->chatMessageListView->height()*2.0/3.0));
+    emojiView->setIconSize(QSize(emojiView->width()/5.0,emojiView->height()/5.0));
+    emojiView->show();
+}
+
+void ChatMainWindow::on_emojiView_clicked(const QModelIndex &index)
+{
+    if (index.isValid())
+    {
+        QVariant data = index.data(Qt::DisplayRole);
+        if (data.isValid())
+        {
+            QString emoji = data.toString();
+            QTextCursor cursor = ui->messageTextEdit->textCursor();
+            cursor.movePosition(QTextCursor::End);
+            cursor.insertText(emoji);
+            ui->messageTextEdit->setTextCursor(cursor);
+            //ui->messageTextEdit->append(emoji);
+
+            this->emojiView->hide();
+        }
+    }
+}
 

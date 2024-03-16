@@ -9,8 +9,10 @@
 ![image](https://github.com/wowwangchen/analogous_qq_for_windows/assets/130348678/91da97cd-32c2-4de1-8c76-21ba2d52d9e4)
 ![image](https://github.com/wowwangchen/analogous_qq_for_windows/assets/130348678/99ceee00-5fd9-4322-bf9b-2fc6b67d2d2c)
 ![image](https://github.com/wowwangchen/analogous_qq_for_windows/assets/130348678/f01d5eff-a48d-4638-8f6b-773a0bd308ed)
-![Uploading image.png…]()
-![Uploading f271ff9c35d7a8399cd52ca607a19a04.png…]()
+<img width="727" alt="03df8d33a44b3ae3d2b8b1fc8fb89cb8" src="https://github.com/wowwangchen/analogous_qq_for_windows/assets/130348678/f6db6111-fdc9-4f53-8fa7-48b736f2e65c">
+
+<img width="727" alt="f271ff9c35d7a8399cd52ca607a19a04" src="https://github.com/wowwangchen/analogous_qq_for_windows/assets/130348678/d897936e-af90-40be-8fde-e4725c2e8fa8">
+
 
 
 

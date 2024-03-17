@@ -1,4 +1,4 @@
-#include "ChatMainWindow.h"
+﻿#include "ChatMainWindow.h"
 #include "ui_ChatMainWindow.h"
 ChatMainWindow::ChatMainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -55,6 +55,8 @@ ChatMainWindow::~ChatMainWindow()
     friendsItems.clear();
 
     delete mySelf;
+    delete m_audio;
+
     emit exitWindow();
 }
 
@@ -65,7 +67,7 @@ void ChatMainWindow::setAllStyleSheet()
     setWindowIcon(iconIcon);
 
     //搜索栏
-    ui->searchLineEdit->setPlaceholderText("🔍搜索");
+    ui->searchLineEdit->setPlaceholderText(QStringLiteral("搜索"));
     ui->searchLineEdit->setAlignment(Qt::AlignLeft);   //左侧
 
     //左侧导航栏
@@ -122,6 +124,8 @@ void ChatMainWindow::setAllStyleSheet()
     //view的model与delegate
     MessageDelegate=new ListItemDelegate(ui->chatMessageListView);
     ui->chatMessageListView->setItemDelegate(MessageDelegate);
+    ui->chatMessageListView->setToolTip("double clicked to read");
+    ui->chatMessageListView->setEditTriggers(QAbstractItemView::NoEditTriggers);
 
     //个人信息
     this->mySelf=new People("-1");
@@ -132,6 +136,7 @@ void ChatMainWindow::setAllStyleSheet()
     ui->faceButton->setToolTip("select emoji");
     ui->cutButton->setToolTip("screenShot");
     ui->addFriendButton->setToolTip("add friend");
+    ui->sendVoiceButton->setToolTip("tap and hold(voice to text)");
 
     //添加好友的页面
     addFriendWidget=new AddFriend();
@@ -149,6 +154,29 @@ void ChatMainWindow::setAllStyleSheet()
     emojiView->setWrapping(true); // 启用项的换行显示
     emojiView->hide();
 
+
+    foreach (QString engine, QTextToSpeech::availableEngines())
+        qDebug()<<engine;
+
+
+    //语音播放功能
+    m_speech=new MyTextToSpeech;
+    //m_speech->set
+
+    //m_speech
+    QVector<QVoice> voices = m_speech->availableVoices();
+    qDebug()<<"size:"<<voices.size();
+    for(auto iter : voices)
+    {
+        qDebug() << "Checking voice: " << iter.name()<<' '<<iter.age()<<" "<<iter.gender();
+        if(iter.age()==QVoice::Age::Child&&iter.gender()==QVoice::Gender::Male)
+        {
+            m_speech->setVoice(iter);
+        }
+    }
+
+    //发送语音功能
+    m_audio=new MyAudio;
 }
 
 void ChatMainWindow::initChat()
@@ -410,6 +438,7 @@ void ChatMainWindow::on_messageTextEdit_textChanged()
                                              "}");
         ui->sendMessageButton->setEnabled(true);
     }
+
 }
 
 void ChatMainWindow::on_chatListWidget1_itemClicked(QListWidgetItem *item)
@@ -462,14 +491,14 @@ void ChatMainWindow::onSocketReadyRead()
 
 
 
-    //文本消息
+    //文本消息:收消息
     if(strlist[3]=="0")
     {
         QString sender=strlist[1];
         QString message=strlist[4];
 
         //让delegate识别，左对齐
-        message="a1`"+message;
+        message="```"+message;
 
 
         //通过名字来map出对应的model显示它们的聊天记录
@@ -483,6 +512,7 @@ void ChatMainWindow::onSocketReadyRead()
         QStringList itemlist = _model->stringList();
         itemlist.append(message);
         _model->setStringList(itemlist);
+        qDebug()<<message;
     }
     //文件
     else if(strlist[3]=="1")
@@ -567,6 +597,10 @@ void ChatMainWindow::onSocketReadyRead()
 
 void ChatMainWindow::on_sendMessageButton_clicked()
 {
+    if(ui->nameLabel->text().isEmpty())
+    {
+        return;
+    }
     //消息数据包
     QString str;
     QString sign="0";
@@ -634,6 +668,8 @@ void ChatMainWindow::on_selectFileButton_clicked()
     // 文本数据包格式：群聊标志 + 发信息员工QQ号 + 收信息员工QQ号（群QQ号） + 信息类型(0) + 数据
     // 表情数据包格式：群聊标志 + 发信息员工QQ号 + 收信息员工QQ号（群QQ号） + 信息类型(0) + 表情个数 + images + 数据
     // 文件数据包格式：群聊标志 + 发信息员工QQ号 + 收信息员工QQ号（群QQ号） + 信息类型(1) + 文件长度 +文件名称 + 文件内容
+    // 加好友数据包格式：是要加的人(0)还是被加的人(1) + 发消息员工QQ号 + 被加员工QQ号 + 信息类型(3) +是否找到
+
 
     //消息数据包
     QString str;
@@ -724,4 +760,38 @@ void ChatMainWindow::on_emojiView_clicked(const QModelIndex &index)
         }
     }
 }
+
+
+void ChatMainWindow::on_chatMessageListView_doubleClicked(const QModelIndex &index)
+{
+    if (index.isValid())
+    {
+        QVariant data = index.data(Qt::DisplayRole);
+        if (data.isValid())
+        {
+            QString message = data.toString();
+            m_speech->say(message);
+        }
+    }
+}
+
+
+
+
+
+void ChatMainWindow::on_sendVoiceButton_pressed()
+{
+    this->m_audio->startAudio("myaudio");
+}
+
+
+void ChatMainWindow::on_sendVoiceButton_released()
+{
+    this->m_audio->stopAudio();
+
+    QString retStr=m_audio->startSpeech();
+    ui->messageTextEdit->append(retStr);
+}
+
+
 

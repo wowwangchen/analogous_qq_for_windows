@@ -1,4 +1,4 @@
-#ifndef CHATMAINWINDOW_H
+﻿#ifndef CHATMAINWINDOW_H
 #define CHATMAINWINDOW_H
 
 #include <QMainWindow>
@@ -35,6 +35,11 @@
 #include"EmojiModel.h"
 #include<QMouseEvent>
 #include"EmojiDelegate.h"
+#include<QTextToSpeech>
+#include"MyTextToSpeech.h"
+#include<QVoice>
+#include"MyAudio.h"
+
 namespace Ui {
 class ChatMainWindow;
 }
@@ -98,6 +103,14 @@ private slots:
     void on_faceButton_clicked();
     void on_emojiView_clicked(const QModelIndex &index);
 
+    void on_chatMessageListView_doubleClicked(const QModelIndex &index);
+
+
+
+    void on_sendVoiceButton_pressed();
+
+    void on_sendVoiceButton_released();
+
 private:
     Ui::ChatMainWindow *ui;
 
@@ -121,6 +134,10 @@ private:
     EmojiModel *emojiModel; //表情的listview
     QListView *emojiView;
     EmojiDelegate *emojiDelegate;
+
+    MyTextToSpeech *m_speech;
+
+    MyAudio* m_audio;
 
 
 };

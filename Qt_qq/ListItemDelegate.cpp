@@ -26,13 +26,14 @@ void ListItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &opti
 
     //调整每个框的大小
     QRect adjustedRect = option.rect.adjusted(2, 2, -2, -2);
-    adjustedRect.setHeight(adjustedRect.height() + 10);
+    adjustedRect.setHeight(adjustedRect.height() + 20);
 
 
 
     //左对齐
-    if(message.size()>=3 &&message[0]=="a"&&message[1]=="1"&&message[2]=="`")
+    if(message.size()>=3 &&message.startsWith("```"))
     {
+        qDebug()<<"delegate:"<<message;
         message.remove(0,3);
         // 收到的消息，靠左对齐，使用不同的颜色和背景
         painter->setPen(Qt::blue);

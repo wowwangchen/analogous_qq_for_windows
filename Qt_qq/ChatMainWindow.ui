@@ -918,9 +918,12 @@ background-color: rgb(242, 242, 242);</string>
                    <property name="styleSheet">
                     <string notr="true">QListWidget::item:hover 
 { 
-background-color: transparent;
+	background-color: transparent;
+	font: 12pt &quot;Segoe Print&quot;;
 }
-border:none;</string>
+
+border:none;
+</string>
                    </property>
                    <property name="horizontalScrollBarPolicy">
                     <enum>Qt::ScrollBarAlwaysOff</enum>

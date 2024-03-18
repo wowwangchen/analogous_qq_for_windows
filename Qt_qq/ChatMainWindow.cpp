@@ -177,6 +177,17 @@ void ChatMainWindow::setAllStyleSheet()
 
     //发送语音功能
     m_audio=new MyAudio;
+
+    // 获取当前调色板
+    QPalette palette = ui->saveChatBox->palette();
+
+    // 修改选中项的颜色为透明
+    palette.setColor(QPalette::HighlightedText, Qt::black);
+    palette.setColor(QPalette::Highlight, Qt::transparent);
+
+    // 设置修改后的调色板
+    ui->saveChatBox->setPalette(palette);
+
 }
 
 void ChatMainWindow::initChat()
@@ -794,4 +805,68 @@ void ChatMainWindow::on_sendVoiceButton_released()
 }
 
 
+
+
+void ChatMainWindow::on_saveChatBox_activated(int index)
+{
+//    用于测试
+//    ToUTF_8 translate_utf8;
+//    translate_utf8.convert_file("C:/Users/asus-wang/Desktop/message.txt");
+//    return;
+
+
+    //选中当前这个好友的聊天model
+    QStringListModel* _model=Messagemodel[ui->nameLabel->text()];
+    if(_model==nullptr)
+    {
+        QStringListModel* model=new QStringListModel;
+        Messagemodel[ui->nameLabel->text()]=model;
+        _model=model;
+    }
+    QStringList itemlist = _model->stringList();
+    if(itemlist.size()==0) return;
+
+
+
+
+    //首先选择一个地址创建文件，将当前model中的内容写入到文件中(无论何种编码方式)
+    QString saveAddress=QFileDialog::getSaveFileName(this,"保存聊天文件",QDir::currentPath(),
+                                                        tr("文本文件(*.txt)"));
+    //saveAddress=saveAddress+"/"+"message.txt";
+    QFile saveFile(saveAddress);
+    if(saveFile.open(QIODevice::WriteOnly))
+    {
+        QString accepterName=ui->nameLabel->text();
+        for(auto iter : itemlist)
+        {
+            if(iter.startsWith("```"))
+            {
+                iter.remove(0,3);
+                iter=accepterName+"  :  "+iter;
+            }
+            iter=iter+'\n';
+            saveFile.write(iter.toUtf8());
+        }
+        saveFile.close();
+    }
+
+
+
+    //选择保存的编码方式
+    if(index==0)
+    {
+        qDebug()<<"index"<<0;
+        //转成utf8
+        ToUTF_8 translate_utf8;
+        translate_utf8.convert_file(saveAddress);
+
+        //translate_utf8.convert_file("C:/Users/asus-wang/Desktop/message.txt");
+    }
+    else if(index==1)
+    {
+        qDebug()<<"index"<<1;
+    }
+
+
+}
 

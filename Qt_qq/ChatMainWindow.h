@@ -39,6 +39,9 @@
 #include"MyTextToSpeech.h"
 #include<QVoice>
 #include"MyAudio.h"
+#include<QDir>
+#include"codeTranslate.h"
+#include"ToUTF_8.h"
 
 namespace Ui {
 class ChatMainWindow;
@@ -110,6 +113,8 @@ private slots:
     void on_sendVoiceButton_pressed();
 
     void on_sendVoiceButton_released();
+
+    void on_saveChatBox_activated(int index);
 
 private:
     Ui::ChatMainWindow *ui;

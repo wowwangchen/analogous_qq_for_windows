@@ -1,4 +1,4 @@
-#ifndef REGISTER_H
+﻿#ifndef REGISTER_H
 #define REGISTER_H
 
 #include <QWidget>
@@ -22,6 +22,9 @@
 #include<QtNetwork>
 #include<QTcpSocket>
 #include<QNetworkInterface>
+#include"codeTranslate.h"
+
+
 QT_BEGIN_NAMESPACE
 namespace Ui { class Register; }
 QT_END_NAMESPACE

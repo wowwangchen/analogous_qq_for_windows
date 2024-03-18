@@ -1,4 +1,4 @@
-﻿cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.5)
 
 project(Qt_qq VERSION 0.1 LANGUAGES CXX)
 
@@ -73,6 +73,9 @@ else()
             MyAudio.h MyAudio.cpp
             Speech.h Speech.cpp
             Http.h Http.cpp
+            codeTranslate.h
+            ToUTF_8.h ToUTF_8.cpp
+
 
         )
     endif()

@@ -72,6 +72,7 @@ QString Speech::speechIdentify(QString audioFile)
         QString key = "result";
         QString text = getJsonValue(replyData,key);//json解析，自定义函数将结果转换成QString
         return text;
+        qDebug()<<"true";
     }
     else
     {
@@ -110,6 +111,7 @@ QString Speech::getJsonValue(QByteArray &data, QString &key)
                             retStr += subValue.toString()+" ";
                         }
                     }
+                    qDebug() <<"data:"<< data.data();
                     return retStr;
                 }
             }

@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5)
+﻿cmake_minimum_required(VERSION 3.5)
 
 project(Qt_qq VERSION 0.1 LANGUAGES CXX)
 
@@ -82,6 +82,7 @@ target_link_libraries(Qt_qq PRIVATE Qt${QT_VERSION_MAJOR}::Widgets)
 target_link_libraries(Qt_qq PRIVATE Qt${QT_VERSION_MAJOR}::Sql)
 target_link_libraries(Qt_qq PRIVATE Qt${QT_VERSION_MAJOR}::Multimedia)
 target_link_libraries(Qt_qq PRIVATE Qt${QT_VERSION_MAJOR}::TextToSpeech)
+#target_link_directories(Qt_qq PRIVATE "${"C:\Program Files\OpenSSL-Win64\include}")
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
 # If you are developing for iOS or macOS you should consider setting an

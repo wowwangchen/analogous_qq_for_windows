@@ -14,12 +14,15 @@
 #include <QHostInfo>
 #include <QDebug>
 #include"Http.h"
-const QString BaiduSpeechUrl = "http://aip.baidubce.com/oauth/2.0/token?grant_type=client_credentials&client_id=%1&client_secret=%2"; //获取token请求的Url
-const QString BaiduSpeechClientID = "v0jaeF9X3Z7e0n5TsHaD5keZ";                                 //AK
-const QString BaiduSpeechClientSecret = "Sm3pQ1ERXLu11RlRddnlpRBsHBdUNvVn";     //SK
+#include<QSslSocket>
+#include<QNetworkAccessManager>
+
+const QString BaiduSpeechUrl = "https://aip.baidubce.com/oauth/2.0/token?grant_type=client_credentials&client_id=%1&client_secret=%2"; //获取token请求的Url
+const QString BaiduSpeechClientID = "XUw0Nk6Fpb2Bp5kvR77CdZ5W";                                 //AK
+const QString BaiduSpeechClientSecret = "Thyeuu4zEROdozLT3eNTB2e48CvhFEX4";     //SK
 
 //语音识别的Url
-const QString BaiduSpeechSatrtUrl = "http://vop.baidu.com/pro_api?dev_pid=80001&cuid=%1&token=%2"; //80001识别普通话  %1:本机标识 %2:获取的token
+const QString BaiduSpeechSatrtUrl = "http://vop.baidu.com/server_api?dev_pid=1537&cuid=%1&token=%2"; //80001识别普通话  %1:本机标识 %2:获取的token
 /*
  * 1.发送获取token值的Url，相当于向百度对接，获取通行证(token值)
  * 2.发送语音识别的Url，进行语音识别

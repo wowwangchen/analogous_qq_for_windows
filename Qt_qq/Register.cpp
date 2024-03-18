@@ -1,4 +1,4 @@
-#include "Register.h"
+﻿#include "Register.h"
 #include "./ui_Register.h"
 
 Register::Register(QWidget *parent): QWidget(parent), ui(new Ui::Register)
@@ -177,7 +177,7 @@ void Register::judgeCanLogin(QString account, QString password)
             this->hide();
 
             chatMainwindow->connectToServer(ui->accountLineEdit->text());
-            qDebug()<<ui->accountLineEdit->text()+"ui->accountLineEdit->text()";
+            //qDebug()<<ui->accountLineEdit->text()+"ui->accountLineEdit->text()";
 
             QVector<QString> friends;
             friends.push_back("zhoumi");

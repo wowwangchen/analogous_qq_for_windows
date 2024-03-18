@@ -3,7 +3,10 @@
 Speech::Speech(QObject *parent)
     : QObject{parent}
 {
+    qDebug()<<QSslSocket::sslLibraryBuildVersionString();
 
+    QNetworkAccessManager *manager=new QNetworkAccessManager(this);
+    qDebug()<<"manager->supportedSchemes"<<manager->supportedSchemes();
 }
 
 QString Speech::speechIdentify(QString audioFile)
@@ -13,11 +16,14 @@ QString Speech::speechIdentify(QString audioFile)
         QMessageBox::warning(NULL,"警告(speech)","the file not exist");
         return QString("");
     }
-
     bool ret = false;
+
+
 
     /* 组装access token的Url */
     QString TokenUrl = QString(BaiduSpeechUrl).arg(BaiduSpeechClientID).arg(BaiduSpeechClientSecret);
+
+
 
     /**************获取token值不用的参数，但自定义http函数需要传入**************/
     QMap<QString, QString>header; //Content-Type: audio/pcm;rate=16000键值对       RAW方式上传音频
@@ -25,8 +31,8 @@ QString Speech::speechIdentify(QString audioFile)
 
     QByteArray requestData;//存放上传的录音信息
     QByteArray replyData;//存放语音识别返回的结果
-
     /**************获取token值不用的参数，但自定义http函数需要传入**************/
+
 
     //获取token值，获取一次使用30天
     if(accessToken.isEmpty() == true)//如果token值为空，即未获取token值
@@ -38,12 +44,14 @@ QString Speech::speechIdentify(QString audioFile)
             QString key = "access_token";
             accessToken = getJsonValue(replyData,key);
             replyData.clear();
-            //            qDebug() << "获取的token ——" << accessToken;
+            qDebug() << "access_token ----" << accessToken;
         }
     }
 
+
     /* 将获取的token值组装到新的url中用于发送语音识别请求*/
-    QString speechUrl=QString(BaiduSpeechSatrtUrl).arg(QHostInfo::localHostName()).arg(accessToken);
+    //QString speechUrl=QString(BaiduSpeechSatrtUrl).arg(QHostInfo::localHostName()).arg(accessToken);
+    QString speechUrl=QString(BaiduSpeechSatrtUrl).arg("98-43-FA-95-18-48").arg(accessToken);
 
     /* 把文件转换成QByteArray */
     QFile file;
@@ -119,7 +127,7 @@ QString Speech::getJsonValue(QByteArray &data, QString &key)
     {
         qDebug() << "Failed to parse json";
     }//NoError
-    qDebug() << "Failed to parse json:" << data.data();
+    qDebug() <<"data:"<< data.data();
         return QString("");
 
 }

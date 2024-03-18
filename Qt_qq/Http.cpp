@@ -1,4 +1,4 @@
-#include "Http.h"
+﻿#include "Http.h"
 
 Http::Http(QObject *parent)
     : QObject{parent}
@@ -30,5 +30,9 @@ bool Http::http_postRequst(QString Url, QMap<QString, QString> header, QByteArra
         replyData = Reply->readAll();//读取获取的语音识别结果
         return true;
     }
-    return false;
+    else
+    {
+        qDebug()<<"Request failed";
+        return false;
+    }
 }

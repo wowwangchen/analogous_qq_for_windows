@@ -165,10 +165,10 @@ void ChatMainWindow::setAllStyleSheet()
 
     //m_speech
     QVector<QVoice> voices = m_speech->availableVoices();
-    qDebug()<<"size:"<<voices.size();
+    //qDebug()<<"size:"<<voices.size();
     for(auto iter : voices)
     {
-        qDebug() << "Checking voice: " << iter.name()<<' '<<iter.age()<<" "<<iter.gender();
+        //qDebug() << "Checking voice: " << iter.name()<<' '<<iter.age()<<" "<<iter.gender();
         if(iter.age()==QVoice::Age::Child&&iter.gender()==QVoice::Gender::Male)
         {
             m_speech->setVoice(iter);
@@ -361,7 +361,7 @@ void ChatMainWindow::initFriends()
     ui->friendsTreeWidget->addTopLevelItem(firstItem);
 
 
-    qDebug()<<"mySelf->friends.size()"<<mySelf->friends.size();
+    //qDebug()<<"mySelf->friends.size()"<<mySelf->friends.size();
     for (int i=0;i<mySelf->friends.size();i++)
     {
         QString friendName=mySelf->friends[i];
@@ -700,7 +700,7 @@ void ChatMainWindow::on_selectFileButton_clicked()
             message=file.readAll();
             //    0         1           2               3                   4                   5           6
             str=sign+"###"+sender+"###"+accepter+"###"+messageType+"###"+messageLength+"###"+fileName+"###"+message;
-            qDebug()<<"filename:"<<fileName;
+            //qDebug()<<"filename:"<<fileName;
             _socket->write(str.toUtf8());
 
 
@@ -781,7 +781,7 @@ void ChatMainWindow::on_chatMessageListView_doubleClicked(const QModelIndex &ind
 
 void ChatMainWindow::on_sendVoiceButton_pressed()
 {
-    this->m_audio->startAudio("myaudio");
+    this->m_audio->startAudio("F:/test.pcm");
 }
 
 
